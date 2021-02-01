@@ -95,17 +95,22 @@ public class ImportFile extends HttpServlet {
 	
 		  try 
 		  {
-			  // if it comes in as HTML
 			  // ours is coming in as a string buffer
 			  JSONObject jsonObject =  new JSONObject(jb.toString());
 		      JSONObject jsonrtoos = (JSONObject)jsonObject.get("rtoos_msg");	  
 			  
+		      // //////////////////////////////////////////////////////
+		      //
+		      // serviceparam is the parameter that is passed in
+		      // in our case it is json, so we create jsonInput
+		      //
+		      // //////////////////////////////////////////////////////
 			  serviceparam = jsonrtoos.getString("service_param");
 			  JSONObject jsonInput =  new JSONObject(serviceparam);
 			  
 			  // get the value
 			  sttype = jsonrtoos.getString("type");
-			  
+			  // should always be "Event" from the platform
 			  if (sttype.equals("Event") )
 			  {
 				  //System.out.println(jb.toString());
@@ -121,52 +126,99 @@ public class ImportFile extends HttpServlet {
 				  System.out.println("Starting: ");
 				  System.out.println(strjason);
 				  
-				  // first things first, store the transactions in DB
+				  //
+				  // first things first, setup connection to DB
+				  //
 				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
 				  Session session = cluster.connect();
 				  session.execute("USE testapp");
 				  
-				  // if clearing = Bulk and Authenticate = Transaction
-				  // create the Clearing Bulk service, then we will add RtoosPredecessor for each Transaction
-				  String BulkClear = "";
-				  if (Authenticate.equals("Transaction") && Clearing.equals("Bulk"))
-				  {
-					  BulkClear = rtooslib.RtoosIndependant("http://localhost:8080/RtoosEvent/BulkClear.html", rootid, "Register", jsonrtoos);
-				  }
-				
-				  BufferedReader csvReader = new BufferedReader(new FileReader(FileName));
-				  String row;
-				  while ((row = csvReader.readLine()) != null) {
-					    String[] data = row.split(",");
-					    
-					    if (Authenticate.equals("Transaction"))
-					    {					    	
-							String transactionid = rtooslib.RtoosIndependant("http://localhost:8080/RtoosEvent/Transaction.html", "Authenticate Transaction", "Register", jsonrtoos);
-							session.execute("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
-									UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");
-							if ( Clearing.equals("Individual"))
-							{
-								  rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/ClearIndividual.html", transactionid, "Register", transactionid, jsonrtoos);						
-							}
-							else if (Clearing.equals("Bulk"))
-							{
-								  rtooslib.RtoosPredecessor(transactionid, BulkClear, jsonrtoos);						
-							}
-					    }
-					    else if (Authenticate.equals("Batch"))
-					    {
-						  	String transactionid = rtooslib.RtoosContained("http://localhost:8080/RtoosEvent/Transaction.html", rootid, "Register", jsonrtoos);
-							session.execute("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
-									UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");					    	
-					    }
-				  }
-				  csvReader.close();
 				  
+			      // //////////////////////////////////////////////////////
+			      //
+			      // serviceparam is the parameter that is passed in
+			      // in our case it is json, so we create jsonInput
+			      //
+			      // //////////////////////////////////////////////////////
 				  if (Authenticate.equals("Batch"))
 				  {
+				      // //////////////////////////////////////////////////////
+					  // Batch
+				      // //////////////////////////////////////////////////////
+					  BufferedReader csvReader = new BufferedReader(new FileReader(FileName));
+					  String row;
+					  while ((row = csvReader.readLine()) != null) 
+					  {
+						  //
+						  // register as "contained
+						  // and store in DB
+						  //
+						  String[] data = row.split(",");
+						  String transactionid = rtooslib.RtoosContained("http://localhost:8080/RtoosEvent/Transaction.html", "Authenticate Transaction", "Register", jsonrtoos);
+						  session.execute("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
+									UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");
+					  }
+					  csvReader.close();
+					  //
 					  // after all transactions are authenticated, Evaluate the Batch
+					  //
 					  rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/EvaluateBatch.html", rootid, "Register", jsonrtoos.getString("service"), jsonrtoos);
 				  }
+				  else if (Authenticate.equals("Transaction") )
+				  {
+				      // //////////////////////////////////////////////////////
+					  // Transaction
+				      // //////////////////////////////////////////////////////
+					  if (Clearing.equals("Bulk"))
+					  {
+					      // //////////////////////////////////////////////////////
+						  // Bulk Clearing
+					      // //////////////////////////////////////////////////////					  
+						  
+						  // create the bulkclear service
+						  String BulkClear = rtooslib.RtoosIndependant("http://localhost:8080/RtoosEvent/BulkClear.html", rootid, "Register", jsonrtoos);
+						  
+						  BufferedReader csvReader = new BufferedReader(new FileReader(FileName));
+						  String row;
+						  while ((row = csvReader.readLine()) != null) 
+						  {
+							  // create the authenticate service
+							  // and store in DB
+							  String[] data = row.split(",");
+							  String transactionid = rtooslib.RtoosIndependant("http://localhost:8080/RtoosEvent/Transaction.html", "Authenticate Transaction", "Register", jsonrtoos);
+							  session.execute("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
+										UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");
+							  
+							  // make authentication service predecessor to bulk clear
+							  rtooslib.RtoosPredecessor(transactionid, BulkClear, jsonrtoos);						
+						  }
+						  csvReader.close();
+					  }
+					  else if (Clearing.equals("Individual"))
+					  {
+					      // //////////////////////////////////////////////////////
+						  // Individual Clearing
+					      // //////////////////////////////////////////////////////					  
+					  
+						  BufferedReader csvReader = new BufferedReader(new FileReader(FileName));
+						  String row;
+						  while ((row = csvReader.readLine()) != null) 
+						  {
+							  // create the authenticate service
+							  // and store in DB
+							  String[] data = row.split(",");
+							  String transactionid = rtooslib.RtoosIndependant("http://localhost:8080/RtoosEvent/Transaction.html", "Authenticate Transaction", "Register", jsonrtoos);
+							  session.execute("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
+										UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");
+							  
+							  // clear individual as subsequent
+							  rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/ClearIndividual.html", transactionid, "Register", transactionid, jsonrtoos);						
+
+						  }
+						  csvReader.close();
+					  }
+				  }
+				  
 				  
 				  // Release the registered services
 				  rtooslib.RtoosUpdate("Release", jsonrtoos);
@@ -178,38 +230,6 @@ public class ImportFile extends HttpServlet {
 				  
 			      System.out.println("Ending: ");
 			      System.out.println(strjason);
-/*
-				  // lets test sending a new event
-				  if (serviceparam.equals("Root"))
-				  {
-					  // do some "news" (start right away)
-					  rtooslib.RtoosIndependant("http://localhost:8080/RtoosEvent/TestEvent1.html", "Level1 I", "New", jsonrtoos);
-					  rtooslib.RtoosContained("http://localhost:8080/RtoosEvent/TestEvent1.html", "Level1 C", "New", jsonrtoos);
-					  rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/TestEvent1.html", "Level1 S", "New", jsonrtoos.getString("service"), jsonrtoos);
-					  
-					  // register some independent services (start after release)
-					  for (int i = 0; i < 2; i++)
-					  {
-						  rtooslib.RtoosIndependant("http://localhost:8080/RtoosEvent/TestEvent1.html", "Level1 I", "Register", jsonrtoos);
-					  }
-					  // register some subsequent services (start after release)
-					  for (int i = 0; i < 2; i++)
-					  {
-						  String newevent = rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/TestEvent1.html", "Level1 S", "Register", jsonrtoos.getString("service"), jsonrtoos);
-						  rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/TestEvent1.html", "Level2 S", "Register", newevent, jsonrtoos);
-					  }
-					  // add some contained services (start after release)
-					  for (int i = 0; i < 2; i++)
-					  {
-						  rtooslib.RtoosContained("http://localhost:8080/RtoosEvent/TestEvent1.html", "Level1 C", "Register", jsonrtoos);
-					  }
-					  
-				  }
-				  else
-				  {
-					  TimeUnit.SECONDS.sleep(2);	// add a little wait, to see if root will end
-				  }
-*/			    
 			  }
 			  else 
 			  {
