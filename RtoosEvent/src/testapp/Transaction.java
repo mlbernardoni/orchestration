@@ -131,19 +131,19 @@ public class Transaction extends HttpServlet {
 			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
 			      {
-			    	  
-				      System.out.println("Transaction Found It: ");
-/*				      status = all.get(i).getString("status");	
-				      String neweventid = all.get(i).getUUID("service").toString();	
-				      if (status.equals("I"))	// kick off independent events
-				      {
-				    	  sendEvent( rootid,  partentid,  neweventid);		
+			    	  String newstatus = "V";
+				      String fromaccount = all.get(i).getString("from_account");	
+				      String toaccount = all.get(i).getString("to_account");	
+				      
+				      try {
+				    	  Integer.parseInt(fromaccount);
+				    	  Integer.parseInt(toaccount);
+				      } catch (NumberFormatException nfe) {
+				    	  newstatus = "F";
 				      }
-				      else if (status.equals("C"))	// kick off contained events
-				      {
-				    	  sendEvent( rootid,  partentid,  neweventid );		
-				      }	
-*/				      
+					  String stquery2 = "UPDATE transactions SET status  = '" + newstatus + "' WHERE file_id = " + fileid + " AND transaction_id = " + transactionid;
+				      ResultSet resultSet2 = session.execute(stquery2);
+
 			      }
 			      
 

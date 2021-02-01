@@ -162,7 +162,7 @@ public class ImportFile extends HttpServlet {
 					  //
 					  // after all transactions are authenticated, Evaluate the Batch
 					  //
-					  rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/EvaluateBatch.html", rootid, "Register", jsonrtoos.getString("service"), jsonrtoos);
+					  rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/EvaluateBatch.html", serviceparam, "Register", jsonrtoos.getString("service"), jsonrtoos);
 				  }
 				  else if (Authenticate.equals("Transaction") )
 				  {

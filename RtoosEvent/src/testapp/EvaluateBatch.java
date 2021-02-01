@@ -94,57 +94,93 @@ public class EvaluateBatch extends HttpServlet {
 	
 		  try 
 		  {
-			  // if it comes in as HTML
-			  // ours is coming in as a string buffer
 			  JSONObject jsonObject =  new JSONObject(jb.toString());
 		      JSONObject jsonrtoos = (JSONObject)jsonObject.get("rtoos_msg");	  
 			  String fileid = jsonrtoos.getString("root_service");
 			  String transactionid = jsonrtoos.getString("service");
+			  String rootid = jsonrtoos.getString("root_service");
 			  
+		      // //////////////////////////////////////////////////////
+		      //
+		      // serviceparam is the parameter that is passed in
+		      // in our case it is json, so we create jsonInput
+		      //
+		      // //////////////////////////////////////////////////////
+			  serviceparam = jsonrtoos.getString("service_param");
+			  JSONObject jsonInput =  new JSONObject(serviceparam);
+			  String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
 			  // get the value
 			  sttype = jsonrtoos.getString("type");
 			  
+			  // should always be "Event" from the platform
 			  if (sttype.equals("Event") )
 			  {
 				  //System.out.println(jb.toString());
 
 				  //String serviceurl = jsonrtoos.getString("service_url");
 				  //serviceparam = jsonrtoos.getString("service_param");	// not used, we will use service as transactionid
-
 				  resp = jb.toString();
 			      String strjason = resp;
 			      System.out.println("Starting: ");
 			      System.out.println(strjason);
 			      
-				  // first things first, store the transactions in DB
+				  //
+				  // first things first, setup connection to DB
+				  //
 				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
 				  Session session = cluster.connect();
 				  session.execute("USE testapp");
 
+				  //
+				  // get all the transactions for the file
+				  //
 				  String stquery = "SELECT *  FROM transactions WHERE ";
 			      stquery += "file_id = ";
 			      stquery += fileid;
-			      stquery += " AND transaction_id = ";
-			      stquery += transactionid;
-			      //System.out.println(stquery);
 			      ResultSet resultSet = session.execute(stquery);
+			      //
+			      // see if all good
+			      //
+			      int badtransaction = 0;
 			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
-			      {
-			    	  
-				      System.out.println("Transaction Found It: ");
-/*				      status = all.get(i).getString("status");	
-				      String neweventid = all.get(i).getUUID("service").toString();	
-				      if (status.equals("I"))	// kick off independent events
+			      {			    	  
+				      //  System.out.println("Transaction Found It: ");
+				      String status = all.get(i).getString("status");	
+				      if (status.equals("F"))	// kick off independent events
 				      {
-				    	  sendEvent( rootid,  partentid,  neweventid);		
+				    	  badtransaction = 1;	
 				      }
-				      else if (status.equals("C"))	// kick off contained events
-				      {
-				    	  sendEvent( rootid,  partentid,  neweventid );		
-				      }	
-*/				      
-			      }
+			      }    
+				  if ( badtransaction == 1)
+				  {					  
+				      System.out.println("File Failed ");
+				  }
+				  else
+				  {
+				      // //////////////////////////////////////////////////////
+					  // Bulk
+				      // //////////////////////////////////////////////////////
+					  if (Clearing.equals("Bulk"))
+					  {
+						  
+						  // create the bulkclear service
+						  rtooslib.RtoosSubsequent("http://localhost:8080/RtoosEvent/BulkClear.html", rootid, "New", transactionid, jsonrtoos);						
+					  }
+				      // //////////////////////////////////////////////////////
+					  // Individual
+				      // //////////////////////////////////////////////////////
+					  else if (Clearing.equals("Individual"))
+					  {						  
+					      for (int ii = 0; ii < all.size(); ii++)
+					      {
+					    	 // create the Individual clear service
+						      String transaction_id = all.get(ii).getUUID("transaction_id").toString();	
+							  rtooslib.RtoosIndependant("http://localhost:8080/RtoosEvent/ClearIndividual.html", transaction_id, "New", jsonrtoos);						
+					      }    
+					  }
+					  
+				  }
 			      
 
 			    

@@ -132,7 +132,7 @@ public class ClearIndividual extends HttpServlet {
 			      for (int i = 0; i < all.size(); i++)
 			      {
 			    	  
-				      System.out.println("Transaction Found It: ");
+				      System.out.println("Transaction Cleared: ");
 /*				      status = all.get(i).getString("status");	
 				      String neweventid = all.get(i).getUUID("service").toString();	
 				      if (status.equals("I"))	// kick off independent events
