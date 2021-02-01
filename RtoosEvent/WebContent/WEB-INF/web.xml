@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>RtoosEvent</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  <servlet>
+    <description> </description>
+    <servlet-name>TestAdapter</servlet-name>
+    <servlet-class>testapp.TestAdapter</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestAdapter</servlet-name>
+    <url-pattern>/TestAdapter.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>TestEvent1</servlet-name>
+    <servlet-class>testapp.TestEvent1</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestEvent1</servlet-name>
+    <url-pattern>/TestEvent1.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>FileAdapter</servlet-name>
+    <servlet-class>testapp.FileAdapter</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileAdapter</servlet-name>
+    <url-pattern>/FileAdapter.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>ImportFile</servlet-name>
+    <servlet-class>testapp.ImportFile</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ImportFile</servlet-name>
+    <url-pattern>/ImportFile.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>Transaction</servlet-name>
+    <servlet-class>testapp.Transaction</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Transaction</servlet-name>
+    <url-pattern>/Transaction.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>ClearIndividual</servlet-name>
+    <servlet-class>testapp.ClearIndividual</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ClearIndividual</servlet-name>
+    <url-pattern>/ClearIndividual.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>EvaluateBatch</servlet-name>
+    <servlet-class>testapp.EvaluateBatch</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>EvaluateBatch</servlet-name>
+    <url-pattern>/EvaluateBatch.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>BulkClear</servlet-name>
+    <servlet-class>testapp.BulkClear</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>BulkClear</servlet-name>
+    <url-pattern>/BulkClear.html</url-pattern>
+  </servlet-mapping>
+</web-app>
