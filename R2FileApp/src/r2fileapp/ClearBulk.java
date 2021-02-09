@@ -119,17 +119,19 @@ public class ClearBulk extends HttpServlet {
 			      //System.out.println(stquery);
 			      ResultSet resultSet = session.execute(stquery);
 			      List<Row> all = resultSet.all();
-			      System.out.println("Bulk Total Cleared ");
+			      //System.out.println("Bulk Total Cleared ");
 			      for (int i = 0; i < all.size(); i++)
 			      {			    	  
 				      String status = all.get(i).getString("status");	
+				      String trans = all.get(i).getUUID("transaction_id").toString();
 				      if (status.equals("V"))	// kick off independent events
 				      {
-					      System.out.println("Transaction Cleared: ");
+						  String stquery2 = "UPDATE transactions SET status  = 'C'  WHERE file_id = " + fileid + " AND transaction_id = " + trans;
+						  session.execute(stquery2);
 				      }
 			      }
-			      
-
+			      session.close();
+			      cluster.close();
 			    
 				  // Complete triggers the release of all "successor" services			  
 			      r2lib.RtoosUpdate("Complete", jsonrtoos);

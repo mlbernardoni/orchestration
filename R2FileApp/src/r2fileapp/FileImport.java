@@ -144,7 +144,8 @@ public class FileImport extends HttpServlet {
 				      // //////////////////////////////////////////////////////
 					  r2lib.RtoosSubsequent("http://localhost:8080/R2FileApp/TransactionController.html", serviceparam, "New", jsonrtoos.getString("service"), jsonrtoos);
 				  }
-				  
+				  session.close();
+			      cluster.close();
 				  
 				  response.getWriter().append(resp);
 			   	

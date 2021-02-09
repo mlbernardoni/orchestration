@@ -9,12 +9,25 @@ import java.net.URL;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 import com.datastax.driver.core.utils.UUIDs;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 
 //import java.util.UUID;
 
 public class R2Lib {
+	
+	private JSONArray regarray = new JSONArray();
 
     // //////////////////////////////////////////////////////
 	//
@@ -36,15 +49,17 @@ public class R2Lib {
 	{
 		  try 
 		  {
+			  String serviceid =  RtoosGetID();
 			  JSONObject newservice = new JSONObject();
 			  newservice.put("type", "Root");
-			  newservice.put("service", RtoosGetID());
+			  newservice.put("service", serviceid);
 			  newservice.put("service_url", serviceurl);
 			  newservice.put("service_param", serviceparam);
 			  JSONObject newrequest = new JSONObject();
 			  newrequest.put("rtoos_msg", newservice);
+			  newrequest.put("type", "Indvidual");
 			  String resp = SendEvent(newrequest.toString());	  
-			  return resp.toString();
+			  return serviceid;
 
 		  } 
 		  catch (JSONException  e) 
@@ -76,10 +91,19 @@ public class R2Lib {
 			  newservice.put("service_url", serviceurl);
 			  newservice.put("service_param", serviceparam);
 			  newservice.put("service_type", "I");
-			  JSONObject newrequest = new JSONObject();
-			  newrequest.put("rtoos_msg", newservice);
-			  String resp = SendEvent(newrequest.toString());	  
-			  return resp.toString();
+			  if (servicetype.equals("Register"))
+			  {
+				  //newrequest.put("type", "Batch");
+				  regarray.put(newservice);
+			  }
+			  else
+			  {
+				  JSONObject newrequest = new JSONObject();
+				  newrequest.put("rtoos_msg", newservice);
+				  newrequest.put("type", "Indvidual");
+				  String resp = SendEvent(newrequest.toString());	
+			  }
+			  return serviceid;
 		  } 
 		  catch (JSONException  e) 
 		  {
@@ -127,10 +151,19 @@ public class R2Lib {
 			  newservice.put("service_url", serviceurl);
 			  newservice.put("service_param", serviceparam);
 			  newservice.put("service_type", "C");
-			  JSONObject newrequest = new JSONObject();
-			  newrequest.put("rtoos_msg", newservice);
-			  String resp = SendEvent(newrequest.toString());	  
-			  return resp.toString();
+			  if (servicetype.equals("Register"))
+			  {
+				  //newrequest.put("type", "Batch");
+				  regarray.put(newservice);
+			  }
+			  else
+			  {
+				  JSONObject newrequest = new JSONObject();
+				  newrequest.put("rtoos_msg", newservice);
+				  newrequest.put("type", "Indvidual");
+				  String resp = SendEvent(newrequest.toString());	
+			  }
+			  return serviceid;
 		  } 
 		  catch (JSONException  e) 
 		  {
@@ -177,10 +210,19 @@ public class R2Lib {
 			  newservice.put("service_url", serviceurl);
 			  newservice.put("service_param", serviceparam);
 			  newservice.put("service_type", "S");
-			  JSONObject newrequest = new JSONObject();
-			  newrequest.put("rtoos_msg", newservice);
-			  String resp = SendEvent(newrequest.toString());	  
-			  return resp.toString();
+			  if (servicetype.equals("Register"))
+			  {
+				  //newrequest.put("type", "Batch");
+				  regarray.put(newservice);
+			  }
+			  else
+			  {
+				  JSONObject newrequest = new JSONObject();
+				  newrequest.put("rtoos_msg", newservice);
+				  newrequest.put("type", "Indvidual");
+				  String resp = SendEvent(newrequest.toString());	
+			  }
+			  return serviceid;
 		  } 
 		  catch (JSONException  e) 
 		  {
@@ -211,21 +253,32 @@ public class R2Lib {
 	// RtoosPredecessor
 	//
     // //////////////////////////////////////////////////////
-	public String RtoosPredecessor(String preid, String postid, JSONObject jsonrtoos) throws IOException
+	public String RtoosPredecessor(String preid, String postid, String servicetype, JSONObject jsonrtoos) throws IOException
 	{
+	      //System.out.println(postid);
 		  try 
 		  {
 			  String rootid = jsonrtoos.getString("root_service");
 			
 			  JSONObject newservice = new JSONObject();
+			  newservice.put("service_type", servicetype);
 			  newservice.put("type", "Pre");
 			  newservice.put("root_service", rootid);
 			  newservice.put("pre_service", preid);
 			  newservice.put("blocked_service", postid);
-			  JSONObject newrequest = new JSONObject();
-			  newrequest.put("rtoos_msg", newservice);
-			  String resp = SendEvent(newrequest.toString());	  
-			  return resp.toString();
+			  if (servicetype.equals("Register"))
+			  {
+				  //newrequest.put("type", "Batch");
+				  regarray.put(newservice);
+			  }
+			  else
+			  {
+				  JSONObject newrequest = new JSONObject();
+				  newrequest.put("rtoos_msg", newservice);
+				  newrequest.put("type", "Indvidual");
+				  String resp = SendEvent(newrequest.toString());	
+			  }
+			  return preid;
 		  } 
 		  catch (JSONException  e) 
 		  {
@@ -237,6 +290,36 @@ public class R2Lib {
 	
 
     // //////////////////////////////////////////////////////
+	//
+	// RtoosRelease
+	//
+    // //////////////////////////////////////////////////////
+	public String RtoosRelease(JSONObject jsonrtoos) throws IOException
+	{
+		  try 
+		  {
+			  JSONObject newrequest = new JSONObject();
+			  newrequest.put("root_service", jsonrtoos.getString("root_service"));
+			  newrequest.put("service", jsonrtoos.getString("service"));
+
+			  newrequest.put("rtoos_msg", regarray);
+			  newrequest.put("type", "Batch");
+			  String resp = SendEvent(newrequest.toString());	  
+			  regarray = new JSONArray();
+			  return resp.toString();
+
+		  } 
+		  catch (JSONException  e) 
+		  {
+			  /*report an error*/ 
+			  // crash and burn
+			  throw new IOException(jsonrtoos.toString());
+		  }
+	}
+
+
+
+	// //////////////////////////////////////////////////////
 	//
 	// RtoosUpdate
 	//
@@ -257,6 +340,7 @@ public class R2Lib {
 			  newservice.put("status", status);
 			  JSONObject newrequest = new JSONObject();
 			  newrequest.put("rtoos_msg", newservice);
+			  newrequest.put("type", "Indvidual");
 			  String resp = SendEvent(newrequest.toString());	  
 			  return resp.toString();
 
@@ -278,6 +362,7 @@ public class R2Lib {
 			  newservice.put("type", "Clean");
 			  JSONObject newrequest = new JSONObject();
 			  newrequest.put("rtoos_msg", newservice);
+			  newrequest.put("type", "Indvidual");
 			  String resp = SendEvent(newrequest.toString());	  
 			  return resp.toString();
 
@@ -292,7 +377,31 @@ public class R2Lib {
 
 	private String SendEvent(String strparam) throws IOException
 	{
+		HttpResponse  response;
+/*		
+		try {
+
+			DefaultHttpClient httpClient = new DefaultHttpClient();
+		    StringEntity entity = new StringEntity(strparam);
+		    HttpPost post  = new HttpPost("http://localhost:8080/R2FileApp/R2.html");
+		    post.setEntity(entity);
+		    post.setHeader("Accept", "application/json; utf-8");
+		    post.setHeader("Content-type", "application/json; utf-8");
+//		    post.setHeader("Connection", "close");
+//		    post.setHeader("Connection", "keep-alive");
+
+		    response = httpClient.execute(post);
+		    httpClient.close();
+		    //assertThat(response.getStatusLine().getStatusCode(), equalTo(200));
+		    //httpClient.close();
+		}
+		catch (Exception e)  { 
+			  // crash and burn
+			  throw new IOException("Error sending to Rtoos");
+		}
 		
+	    return response.toString();
+*/
 		  StringBuffer resp = new StringBuffer();
 		  try 
 		  {
@@ -301,6 +410,7 @@ public class R2Lib {
 			  // For a PUT request
 			  connection.setRequestMethod("POST");
 			  connection.setRequestProperty("Content-Type", "application/json; utf-8");
+			  //connection.setRequestProperty("Connection", "keep-alive");
 			  connection.setDoOutput(true);
 			  DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
 			  wr.writeBytes(strparam);
@@ -315,14 +425,15 @@ public class R2Lib {
 				  resp.append(output);
 			  }
 			  in.close();
+			  connection.disconnect();
 		  }
 		  catch (Exception e) 
 		  { 
-			  /*report an error*/ 
 			  // crash and burn
 			  throw new IOException("Error sending to Rtoos");
 		  }
 		  return resp.toString();
+
 	}
 
 }

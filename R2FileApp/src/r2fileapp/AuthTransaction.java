@@ -101,7 +101,7 @@ public class AuthTransaction extends HttpServlet {
 
 				  resp = jb.toString();
 			      //System.out.println(resp);
-			      System.out.println("AuthTransaction Starting: ");
+//			      System.out.println("AuthTransaction Starting: ");
 			      
 				  // first things first, store the transactions in DB
 				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
@@ -132,13 +132,14 @@ public class AuthTransaction extends HttpServlet {
 				      session.execute(stquery2);
 
 			      }
-			      
+			      session.close();
+			      cluster.close();
 
 			    
 				  // Complete triggers the release of all "successor" services			  
 			      r2lib.RtoosUpdate("Complete", jsonrtoos);
 				  
-			      System.out.println("AuthTransaction Ending: ");
+//			      System.out.println("AuthTransaction Ending: ");
 			  }
 			  else 
 			  {

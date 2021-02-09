@@ -1,6 +1,7 @@
 package r2fileapp;
 
 import java.io.BufferedReader;
+import java.util.concurrent.*;
 import java.io.DataOutputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -17,17 +18,21 @@ public class R2SendThread extends Thread {
    private String service_id;
    private String new_url;
    private String new_param;
+   private Semaphore mysemaphore;
    
-   R2SendThread( String rootid, String parentid, String serviceid, String newurl, String newparam) {
+   R2SendThread( String rootid, String parentid, String serviceid, String newurl, String newparam, Semaphore semaphore) {
 	   root_id = rootid;
 	   parent_id = parentid;
 	   service_id = serviceid;
 	   new_url = newurl;
 	   new_param = newparam;
+	   mysemaphore = semaphore;
 	   
    }
    public void run() {
 		  StringBuffer resp = new StringBuffer();
+	      //System.out.println("Thread Starting: ");
+	      //System.out.println(service_id);
 		  try 
 		  {
 
@@ -46,6 +51,7 @@ public class R2SendThread extends Thread {
 			  // For a PUT request
 			  connection.setRequestMethod("POST");
 			  connection.setRequestProperty("Content-Type", "application/json; utf-8");
+			  connection.setRequestProperty("Connection", "close");
 			  connection.setDoOutput(true);
 			  DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
 			  wr.writeBytes(newrequest.toString());
@@ -60,6 +66,7 @@ public class R2SendThread extends Thread {
 				  resp.append(output);
 			  }
 			  in.close();
+			  connection.disconnect();
 		  }
 		  catch (Exception e) 
 		  { 
@@ -67,6 +74,9 @@ public class R2SendThread extends Thread {
 			  // crash and burn
 			  //throw new IOException("Error sending from Rtoos");
 		  }
+	      //System.out.println("Thread Ending: ");
+	      //System.out.println(service_id);
+	      mysemaphore.release();
     }
 
    public void start () {

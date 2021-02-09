@@ -106,7 +106,7 @@ public class ClearIndividual extends HttpServlet {
 				  String serviceparam = jsonrtoos.getString("service_param");	
 
 				  resp = jb.toString();
-			      System.out.println("ClearIndividual Starting: ");
+//			      System.out.println("ClearIndividual Starting: ");
 			      
 				  // first things first, store the transactions in DB
 				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
@@ -127,16 +127,18 @@ public class ClearIndividual extends HttpServlet {
 				      String status = all.get(i).getString("status");	
 				      if (status.equals("V"))	// kick off independent events
 				      {
-					      System.out.println("Transaction Cleared: ");
+						  String stquery2 = "UPDATE transactions SET status  = 'C'  WHERE file_id = " + fileid + " AND transaction_id = " + serviceparam;
+						  session.execute(stquery2);
 				      }
 			      }
-			      
+			      session.close();
+			      cluster.close();
 
 			    
 				  // Complete triggers the release of all "successor" services			  
 			      r2lib.RtoosUpdate("Complete", jsonrtoos);
 				  
-			      System.out.println("ClearIndividual Ending: ");
+//			      System.out.println("ClearIndividual Ending: ");
 			  }
 			  else 
 			  {

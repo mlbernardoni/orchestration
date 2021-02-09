@@ -167,14 +167,18 @@ public class EvaluateBatch extends HttpServlet {
 					      {
 					    	 // create the Individual clear service
 						      String transaction_id = all.get(ii).getUUID("transaction_id").toString();	
-						      r2lib.RtoosIndependant("http://localhost:8080/R2FileApp/ClearIndividual.html", transaction_id, "New", jsonrtoos);						
+						      r2lib.RtoosIndependant("http://localhost:8080/R2FileApp/ClearIndividual.html", transaction_id, "Register", jsonrtoos);						
 					      }    
+					      System.out.println("Evaluate Batch Prerelease: ");
+						  r2lib.RtoosRelease(jsonrtoos);
+					      System.out.println("Evaluate Batch postrelease: ");
 					  }
 					  
 				  }
 			      
 
-			    
+			      session.close();
+			      cluster.close();
 				  // Complete triggers the release of all "successor" services			  
 				  r2lib.RtoosUpdate("Complete", jsonrtoos);
 				  

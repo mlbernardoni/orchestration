@@ -135,13 +135,17 @@ public class BatchController extends HttpServlet {
 				      r2lib.RtoosContained(transactionid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction", "Register", jsonrtoos);
 					  
 			      }    
+			      session.close();
+			      cluster.close();
 
 				  
 				  
 				  response.getWriter().append(resp);
 			   	
 				  // Release the registered services
-				  r2lib.RtoosUpdate("Release", jsonrtoos);
+			      System.out.println("BatchController prerelease: ");
+				  r2lib.RtoosRelease(jsonrtoos);
+			      System.out.println("BatchController postrelease: ");
 				  // Complete triggers the release of all "successor" services			  
 				  r2lib.RtoosUpdate("Complete", jsonrtoos);
 				  

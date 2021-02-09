@@ -130,7 +130,9 @@ public class TransactionController extends HttpServlet {
 					  //
 					  // create the bulkclear service
 					  //
+				      //System.out.println("OY");
 					  String BulkClear = r2lib.RtoosIndependant("http://localhost:8080/R2FileApp/ClearBulk.html", "Clear Bulk", "Register", jsonrtoos);
+				      //System.out.println(BulkClear);
 					  					  
 					  //
 					  // get all the transactions for the file
@@ -152,7 +154,8 @@ public class TransactionController extends HttpServlet {
 						  //
 						  // make authentication service predecessor to bulk clear
 						  //
-					      r2lib.RtoosPredecessor(serviceid, BulkClear, jsonrtoos);		
+					      //System.out.println(serviceid);
+					      r2lib.RtoosPredecessor(serviceid, BulkClear, "Register", jsonrtoos);		
 				      }    
 				  }
 				  else if (Clearing.equals("Individual") )
@@ -186,11 +189,14 @@ public class TransactionController extends HttpServlet {
 				      }    
 				  }
 				  
-				  
+				  session.close();
+			      cluster.close();
 				  response.getWriter().append(resp);
 			   	
 				  // Release the registered services
-				  r2lib.RtoosUpdate("Release", jsonrtoos);
+			      //System.out.println("OY2");
+				  r2lib.RtoosRelease(jsonrtoos);
+			      //System.out.println("OY3");
 				  // Complete triggers the release of all "successor" services			  
 				  r2lib.RtoosUpdate("Complete", jsonrtoos);
 				  
