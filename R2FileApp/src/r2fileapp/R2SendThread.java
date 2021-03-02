@@ -37,13 +37,12 @@ public class R2SendThread extends Thread {
 		  {
 
 		      JSONObject newservice = new JSONObject();
-			  newservice.put("type", "Event");
 			  newservice.put("root_service", root_id);
 			  newservice.put("parent_service", parent_id);
 			  newservice.put("service", service_id);
 			  newservice.put("service_param", new_param);
 			  JSONObject newrequest = new JSONObject();
-			  newrequest.put("rtoos_msg", newservice);
+			  newrequest.put("r2_msg", newservice);
 		      //System.out.println(newservice.toString());
 			  
 			  URL url = new URL(new_url);

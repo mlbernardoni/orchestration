@@ -21,7 +21,7 @@ public class R2_Lib {
 	
 	private JSONArray r2regarray = new JSONArray();
 	private JSONObject r2json = null;
-	private int R2_TIMEOUT = 3000;
+	private int R2_TIMEOUT = 30000;
 	private int R2_TIMEOUT_WAIT = 3000;
 	private int R2_RETRIES = 1;
 	private String R2_URL = "";

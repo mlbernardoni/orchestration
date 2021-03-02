@@ -29,12 +29,12 @@
   </servlet-mapping>
   <servlet>
     <description> </description>
-    <servlet-name>FileImport</servlet-name>
-    <servlet-class>r2fileapp.FileImport</servlet-class>
+    <servlet-name>FileImportController</servlet-name>
+    <servlet-class>r2fileapp.FileImportController</servlet-class>
   </servlet>
   <servlet-mapping>
-    <servlet-name>FileImport</servlet-name>
-    <url-pattern>/FileImport.html</url-pattern>
+    <servlet-name>FileImportController</servlet-name>
+    <url-pattern>/FileImportController.html</url-pattern>
   </servlet-mapping>
   <servlet>
     <description> </description>
@@ -89,5 +89,14 @@
   <servlet-mapping>
     <servlet-name>ClearIndividual</servlet-name>
     <url-pattern>/ClearIndividual.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>Finally</servlet-name>
+    <servlet-class>r2fileapp.Finally</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Finally</servlet-name>
+    <url-pattern>/Finally.html</url-pattern>
   </servlet-mapping>
 </web-app>

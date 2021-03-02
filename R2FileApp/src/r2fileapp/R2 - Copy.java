@@ -16,8 +16,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
 
 import java.util.ArrayList;
+import java.util.List;
+//import java.util.Map;
+import java.util.UUID;
 
 
 
@@ -28,6 +34,7 @@ import java.util.ArrayList;
 public class R2 extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	public Cluster cluster2;
+	//public Session session;
 	public static Semaphore mysemaphore;
        
     /**
@@ -105,18 +112,18 @@ public class R2 extends HttpServlet {
 	//
 	// /////////////////////////////////////////////
 	protected String DoPre ( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+		  Session session2 = cluster2.connect();
+		  session2.execute("USE rtoos");
+
 		  String rootid = jsonrtoos.getString("root_service");
 		  String preid = jsonrtoos.getString("pre_service");
 		  String eventid = jsonrtoos.getString("blocked_service");
 
-		  JSONObject newobj = new JSONObject();		
-		  newobj.put("root_service", rootid);
-		  newobj.put("pre_service", preid);
-		  newobj.put("blocked_service", eventid);
-		  newobj.put("status", "W");		  
-		  dal.UpdateBlockedRow(newobj);
+		  session2.execute("INSERT INTO blocked_list (root_service, pre_service, blocked_service, status) VALUES (?, ?, ?, ?) IF NOT EXISTS;", 
+			  UUID.fromString(rootid), UUID.fromString(preid), UUID.fromString(eventid), "W");
 
-		  JSONObject row = dal.GetServiceRow(eventid);		  
+    	  JSONObject row = dal.GetServiceRow(eventid);
+		  
 		  row.put("servicetype", "S");
 		  dal.UpdateServiceRow(row);
 
@@ -148,33 +155,30 @@ public class R2 extends HttpServlet {
 		  
 		  dal.UpdateServiceRow(newobj);
 		  
+		  Session session2 = cluster2.connect();
+ 	  	  session2.execute("USE rtoos");
+
 	      if (servicetype.equals("S"))	// successor, add eventid to blocked table as waiting (waiting for parent)
 	      {
-			  JSONObject blockobj = new JSONObject();		
-			  blockobj.put("root_service", rootid);
-			  blockobj.put("pre_service", partentid);
-			  blockobj.put("blocked_service", eventid);
-			  blockobj.put("status", "W");		  
-			  dal.UpdateBlockedRow(blockobj);
+		      session2.execute("INSERT INTO blocked_list (root_service, pre_service, blocked_service, status) VALUES (?, ?, ?, ?) IF NOT EXISTS;", 
+		    		  UUID.fromString(rootid), UUID.fromString(partentid), UUID.fromString(eventid), "W");
 	      }
 	      else if (servicetype.equals("C"))	// contained, add parent to blocked table (blocked by eventid)
 	      {
-			  JSONObject blockobj = new JSONObject();		
-			  blockobj.put("root_service", rootid);
-			  blockobj.put("pre_service", eventid);
-			  blockobj.put("blocked_service", partentid);
-			  blockobj.put("status", "B");		  
-			  dal.UpdateBlockedRow(blockobj);
+		      session2.execute("INSERT INTO blocked_list (root_service, pre_service, blocked_service, status) VALUES (?, ?, ?, ?) IF NOT EXISTS;", 
+		    		  UUID.fromString(rootid), UUID.fromString(eventid), UUID.fromString(partentid),  "B");
+	    	  //sendEvent( rootid,  eventid , dal);		
 	      }				      
 	      else if (servicetype.equals("F"))	// contained, add parent to blocked table (blocked by eventid)
 	      {
-			  JSONObject blockobj = new JSONObject();		
-			  blockobj.put("root_service", rootid);
-			  blockobj.put("pre_service", partentid);
-			  blockobj.put("blocked_service", eventid);
-			  blockobj.put("status", "F");		  
-			  dal.UpdateBlockedRow(blockobj);
+		      session2.execute("INSERT INTO blocked_list (root_service, pre_service, blocked_service, status) VALUES (?, ?, ?, ?) IF NOT EXISTS;", 
+		    		  UUID.fromString(rootid), UUID.fromString(partentid), UUID.fromString(eventid), "F");
 	      }				      
+	      //else if (servicetype.equals("I"))	// Independent, just run
+	      //{
+	    	  //sendEvent( rootid, eventid, dal);					    	  
+	      //}
+	      session2.close();
 		  return eventid;
 	}
 	
@@ -185,6 +189,9 @@ public class R2 extends HttpServlet {
 	//
 	// /////////////////////////////////////////////
 	protected void DoFinal ( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+		  Session session2 = cluster2.connect();
+ 	  	  session2.execute("USE rtoos");
+
  	  	  String rootid = jsonrtoos.getString("root_service");
 		  String partentid = jsonrtoos.getString("parent_service");
 		  String eventid = jsonrtoos.getString("service");
@@ -216,32 +223,44 @@ public class R2 extends HttpServlet {
 	    	  JSONObject row = dal.GetServiceRow(testservice);
 			  row.put("status", "F");
 			  dal.UpdateServiceRow(row);
-			  // in complete and final, we can have concurent calls hitting the chain
-			  // for example, multiple services completeing the same time
-			  // so always to a read after a write in complete and final
-			  dal.UpdateServices();
+			  dal.UpdateServices();	// when doing complete, AFTER any updates we need to refresh to avoid race condition		
 				  			      
 		      // see if service is set to run on finished
-			  ArrayList<JSONObject> blockedlist = dal.GetBlockedServices(testservice);
-		      for (int i = 0; i < blockedlist.size(); i++)
+		      String stquery3 = "SELECT *  FROM blocked_list WHERE ";
+		      stquery3 += "root_service = ";
+		      stquery3 += rootid;
+		      stquery3 += " AND pre_service = ";
+		      stquery3 += testservice;
+		      //System.out.println(stquery);
+		      ResultSet resultSet3 = session2.execute(stquery3);
+		      List<Row> all3 = resultSet3.all();
+		      //int gotone = 0;
+		      for (int i = 0; i < all3.size(); i++)
 		      {
-		    	  JSONObject item = blockedlist.get(i);
-			      String status = item.getString("status");	
+		    	  String status = all3.get(i).getString("status");
 		    	  if (status.equals("F"))
 		    	  {
-				      String blockedservice = item.getString("blocked_service");	
-			    	  JSONObject blockedrow = dal.GetBlockedRow(testservice, blockedservice);
-			    	  blockedrow.put("status", "C");
-					  dal.UpdateBlockedRow(blockedrow);	
-					  // in complete and final, we can have concurent calls hitting the chain
-					  // for example, multiple services completeing the same time
-					  // so always to a read after a write in complete and final
-					  dal.UpdateBlocked(); 
-					  
-		    		  // run it
-					  sendEvent( rootid,    blockedservice, dal);
+						//System.out.println("RUNNING A FINAL");
+						
+						// and update blocked list
+						String blockedservice = all3.get(i).getUUID("blocked_service").toString();	
+						String stquery4 = "UPDATE blocked_list SET status  = 'C'";
+						stquery4 += " WHERE";
+						stquery4 += " root_service = ";
+						stquery4 += rootid;
+						stquery4 += " AND pre_service = ";
+						stquery4 += testservice;
+						stquery4 += " AND blocked_service = ";
+						stquery4 += blockedservice;
+						// System.out.println(stquery);
+						session2.execute(stquery4);
+						
+		    		    // run it
+						sendEvent( rootid,    blockedservice, dal);
+						
 		    	  }
-		      }		    	  
+		      }
+		      
 		      if (testservice.equals(rootid))
 		      {
 		    	  testservice = "";
@@ -253,7 +272,9 @@ public class R2 extends HttpServlet {
 		    	  testparent = row.getString("parent_service");
 		      }
 		  }
-	}
+
+		  session2.close();  
+}
 	
 	// /////////////////////////////////////////////
 	//
@@ -263,117 +284,173 @@ public class R2 extends HttpServlet {
 	protected void DoComplete ( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
 
 		  String rootid = jsonrtoos.getString("root_service");
+		  String partentid = jsonrtoos.getString("parent_service");
 		  String eventid = jsonrtoos.getString("service");
 		  
     	  JSONObject row = dal.GetServiceRow(eventid);
 		  
 		  row.put("status", "C");
 		  dal.UpdateServiceRow(row);		  	      
-		  // in complete and final, we can have concurent calls hitting the chain
-		  // for example, multiple services completeing the same time
-		  // so always to a read after a write in complete and final
-		  dal.UpdateServices();
+		  dal.UpdateServices();	// when doing complete, AFTER any updates we need to refresh to avoid race condition		
 
-		  ArrayList<JSONObject> blockedlist = dal.GetPreServices(eventid);
+    	  Session session2 = cluster2.connect();
+ 	  	  session2.execute("USE rtoos");
+	      // first see if this is waiting on any (contained "B") to finish
+ 	  	  // this would be the contained case
+ 	  	  // the easy case
+	      String stquery = "SELECT *  FROM blocked_list WHERE ";
+	      stquery += "root_service = ";
+	      stquery += rootid;
+	      stquery += " AND blocked_service = ";
+	      stquery += eventid;
+	      //System.out.println(stquery);
+	      ResultSet resultSet = session2.execute(stquery);
 	      int stillwaiting = 0;
-	      for (int i = 0; i < blockedlist.size(); i++)
+	      List<Row> all = resultSet.all();
+	      for (int i = 0; i < all.size(); i++)
 	      {
-	    	  JSONObject item = blockedlist.get(i);
-		      String mystatus = item.getString("status");	
+		      String mystatus = all.get(i).getString("status");	
 		      if (mystatus.equals("B"))
 		      {
 		    	  stillwaiting = 1;					    	  
 		      }
 	      }
-	  
 	      if (stillwaiting == 1) 
 	      {
 			  DoFinal( jsonrtoos, dal);
+
 	    	  return;
 	      }
 	      
 	      // see if anyone waiting on this
-		  blockedlist = dal.GetBlockedServices(eventid);
-	      for (int i = 0; i < blockedlist.size(); i++)
+	      stquery = "SELECT *  FROM blocked_list WHERE ";
+	      stquery += "root_service = ";
+	      stquery += rootid;
+	      stquery += " AND pre_service = ";
+	      stquery += eventid;
+	      //System.out.println(stquery);
+	      resultSet = session2.execute(stquery);
+	      
+	      all = resultSet.all();
+	      for (int i = 0; i < all.size(); i++)
 	      {
-	    	  JSONObject item = blockedlist.get(i);
-		      String blocked_service = item.getString("blocked_service");
-		      String blocked_status = item.getString("status");	
+		      String blocked_service = all.get(i).getUUID("blocked_service").toString();
+		      String blocked_status = all.get(i).getString("status");	
+
+	    	  					      					      
 		      if(blocked_status.equals("W"))
 		      {
-		    	  // mark this service as complete
-		    	  JSONObject blockedrow = dal.GetBlockedRow(eventid, blocked_service);
-		    	  blockedrow.put("status", "C");
-				  dal.UpdateBlockedRow(blockedrow);		  
-				  // in complete and final, we can have concurent calls hitting the chain
-				  // for example, multiple services completeing the same time
-				  // so always to a read after a write in complete and final
-				  dal.UpdateBlocked();
-				  
-				  // see if any contained that this service has to wait for
-				  ArrayList<JSONObject> blockedlist2 = dal.GetPreServices(blocked_service);
+		    	  // first update the status
+				  stquery = "UPDATE blocked_list SET status  = 'C'";
+				  stquery += " WHERE";
+			      stquery += " root_service = ";
+			      stquery += rootid;
+			      stquery += " AND pre_service = ";
+			      stquery += eventid;
+			      stquery += " AND blocked_service = ";
+			      stquery += blocked_service;
+			      // System.out.println(stquery);
+			      session2.execute(stquery);
+
+			      // aways do another read after status change
+			      // see if still blocked
+			      stquery = "SELECT *  FROM blocked_list WHERE ";
+			      stquery += "root_service = ";
+			      stquery += rootid;
+			      stquery += " AND blocked_service = ";
+			      stquery += blocked_service;
+			      //System.out.println(stquery);
+			      ResultSet resultSet2 = session2.execute(stquery);
+			      List<Row> all2 = resultSet2.all();
 			      int notblocked = 0;
-			      for (int ii = 0; ii < blockedlist2.size(); ii++)
+			      // for wait, really should only have 1 record
+			      // but we will loop
+			      for (int ii = 0; ii < all2.size(); ii++)
 			      {
-			    	  JSONObject item2 = blockedlist2.get(ii);
-				      String stillblocked = item2.getString("status");	
-				      if (!stillblocked.equals("C"))
+				      String stillblocked = all2.get(ii).getString("status");	
+				      if (!stillblocked.equals("C")) //$$$
 				      {
 				    	  notblocked = 1;	
 				      }
+			    	  
 			      }
-		    	  if (notblocked == 0) // simple case, parent finished, can release
+		    	  if (notblocked == 0)// simple case, parent finished, can release
 		    	  {
-			    	  sendEvent( rootid, blocked_service, dal);										    	  
-		    	  }				    	  				  
+			    	  sendEvent( rootid,    blocked_service, dal);										    	  
+		    	  }				    	  
 		      }
 		      else if (blocked_status.equals("B")) // 
 		      {
-		    	  JSONObject blockedrow = dal.GetBlockedRow(eventid, blocked_service);
-		    	  blockedrow.put("status", "C");
-				  dal.UpdateBlockedRow(blockedrow);		  
-				  // in complete and final, we can have concurent calls hitting the chain
-				  // for example, multiple services completeing the same time
-				  // so always to a read after a write in complete and final
-				  dal.UpdateBlocked();
+		    	  // this one is blocked, at least marked the blocked list as C
+				  stquery = "UPDATE blocked_list SET status  = 'C'";
+				  stquery += " WHERE";
+			      stquery += " root_service = ";
+			      stquery += rootid;
+			      stquery += " AND pre_service = ";
+			      stquery += eventid;
+			      stquery += " AND blocked_service = ";
+			      stquery += blocked_service;
+			      // System.out.println(stquery);
+			      session2.execute(stquery);
 
-				  // see if any contained that this service has to wait for
-				  ArrayList<JSONObject> blockedlist2 = dal.GetPreServices(blocked_service);
+			      // see if still blocked
+			      stquery = "SELECT *  FROM blocked_list WHERE ";
+			      stquery += "root_service = ";
+			      stquery += rootid;
+			      stquery += " AND blocked_service = ";
+			      stquery += blocked_service;
+			      //System.out.println(stquery);
+			      ResultSet resultSet2 = session2.execute(stquery);
+			      List<Row> all2 = resultSet2.all();
 			      int notblocked = 0;
-			      for (int ii = 0; ii < blockedlist2.size(); ii++)
+			      for (int ii = 0; ii < all2.size(); ii++)
 			      {
-			    	  JSONObject item2 = blockedlist2.get(ii);
-				      String stillblocked = item2.getString("status");	
-				      if (!stillblocked.equals("C")) 
+				      String stillblocked = all2.get(ii).getString("status");	
+				      if (!stillblocked.equals("C")) //$$$
 				      {
-				    	  notblocked = 1;	
+				    	  notblocked = 1;					    	  
 				      }
+			    	  
 			      }
 		    	  if (notblocked == 0)
 		    	  {
 		    		  // see if anyone waiting on me
-		    		  ArrayList<JSONObject> blockedlist3  = dal.GetBlockedServices(blocked_service);
-				      for (int ii = 0; ii < blockedlist3.size(); ii++)
+				      stquery = "SELECT *  FROM blocked_list WHERE ";
+				      stquery += "root_service = ";
+				      stquery += rootid;
+				      stquery += " AND pre_service = ";
+				      stquery += blocked_service;
+				      //System.out.println(stquery);
+				      ResultSet resultSet3 = session2.execute(stquery);
+				      List<Row> all3 = resultSet3.all();
+				      for (int iii = 0; iii < all3.size(); iii++)
 				      {
-				    	  JSONObject item2 = blockedlist3.get(ii);
-					      String stillblockedservice = item2.getString("blocked_service");	
-					      String stillblocked = item2.getString("status");	
+				    	  Row blockedlistrow = all3.get(iii);
+				    	  
+					      String stillblockedservice = blockedlistrow.getUUID("blocked_service").toString();	
+					      String stillblocked = blockedlistrow.getString("status");	
 					      if (stillblocked.equals("W"))
 					      {
-					    	  JSONObject blockedrow2 = dal.GetBlockedRow(blocked_service, stillblockedservice);
-					    	  blockedrow2.put("status", "C");
-							  dal.UpdateBlockedRow(blockedrow2);		  
-							  // in complete and final, we can have concurent calls hitting the chain
-							  // for example, multiple services completeing the same time
-							  // so always to a read after a write in complete and final
-							  dal.UpdateBlocked();
+					    	  sendEvent( rootid,    stillblockedservice, dal);				
 					    	  
-					    	  sendEvent( rootid, stillblockedservice, dal);				
-					      }
+							  stquery = "UPDATE blocked_list SET status  = 'C'";
+							  stquery += " WHERE";
+						      stquery += " root_service = ";
+						      stquery += rootid;
+						      stquery += " AND pre_service = ";
+						      stquery += blocked_service;
+						      stquery += " AND blocked_service = ";
+						      stquery += stillblockedservice;
+						      //System.out.println(stquery);
+						      session2.execute(stquery);
+					      }						    	  
 				      }
 		    	  }
+		    	  
 		      }
-	      }		  
+	      }
+		  session2.close();  
+		  
 		  DoFinal( jsonrtoos, dal);
 		  return;
 	}
@@ -426,6 +503,8 @@ public class R2 extends HttpServlet {
 				jb.append(line);
 		} 
 		catch (Exception e) { 
+			/*report an error*/ 
+			// crash and burn
 			throw new IOException("Error reading request string");
 		}
 

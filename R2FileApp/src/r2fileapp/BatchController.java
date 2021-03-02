@@ -11,14 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
-//import r2fileapp.RtoosLib;
 
 /**
  * Servlet implementation class FileImport
@@ -48,11 +46,9 @@ public class BatchController extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		R2Lib r2lib = new R2Lib();
 		// jb is the buffer for the json object
 		StringBuffer jb = new StringBuffer();
 		String line = null;
-		String sttype = null;
 		String resp = null;
 
 		String serviceparam = null;
@@ -72,90 +68,68 @@ public class BatchController extends HttpServlet {
 	
 		  try 
 		  {
-			  // ours is coming in as a string buffer
-			  JSONObject jsonObject =  new JSONObject(jb.toString());
-		      JSONObject jsonrtoos = (JSONObject)jsonObject.get("rtoos_msg");	  
-			  
-		      // //////////////////////////////////////////////////////
-		      //
-		      // serviceparam is the parameter that is passed in
-		      // in our case it is json, so we create jsonInput
-		      //
-		      // //////////////////////////////////////////////////////
-			  serviceparam = jsonrtoos.getString("service_param");
-			  //JSONObject jsonInput =  new JSONObject(serviceparam);
-			  
-			  // get the value
-			  sttype = jsonrtoos.getString("type");
-			  // should always be "Event" from the platform
-			  if (sttype.equals("Event") )
-			  {
-				  //System.out.println(jb.toString());
-				  String fileid = jsonrtoos.getString("root_service");
-				  String serviceid = jsonrtoos.getString("service");
-				  
-				  //String Authenticate = jsonInput.getString("Authenticate");	// Batch or Transaction
-				  //String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
-				
-				  resp = jb.toString();
-			      System.out.println("BatchController Starting: ");
-				  
-				  
-				  //
-				  // create the EvaluateBatch service
-				  // as subsequent
-				  //
-				 r2lib.RtoosSubsequent("http://localhost:8080/R2FileApp/EvaluateBatch.html", serviceparam, "Register", serviceid, jsonrtoos);
-				  
-				  //
-				  // first things first, setup connection to DB
-				  //
-				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-				  Session session = cluster.connect();
-				  session.execute("USE testapp");
-				  
-				  //
-				  // get all the transactions for the file
-				  //
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      ResultSet resultSet = session.execute(stquery);
+			  resp = jb.toString();
+		      System.out.println("BatchController Starting: ");
 
-			      List<Row> all = resultSet.all();
-			      for (int i = 0; i < all.size(); i++)
-			      {			    	  
-				      //  System.out.println("Transaction Found It: ");
-				      String transactionid = all.get(i).getUUID("transaction_id").toString();
-				      
-				      //
-				      // create the authenticate service
-				      // as contained
-				      //
-				      r2lib.RtoosContained(transactionid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction", "Register", jsonrtoos);
-					  
-			      }    
-			      session.close();
-			      cluster.close();
+		      // ours is coming in as a string buffer
+			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  
+			  // get parameter from the message and make it a json object
+		      //JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
+			  
+			  //System.out.println(jb.toString());
+			  String fileid = r2lib.R2_GetRootID(); 
+			  serviceparam = r2lib.R2_GetParam();
+			  
+			  //
+			  // create the EvaluateBatch service
+			  // as subsequent
+			  //
+			 r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/EvaluateBatch.html", serviceparam);
+			  
+			  //
+			  // first things first, setup connection to DB
+			  //
+			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  Session session = cluster.connect();
+			  session.execute("USE testapp");
+			  
+			  //
+			  // get all the transactions for the file
+			  //
+			  String stquery = "SELECT *  FROM transactions WHERE ";
+		      stquery += "file_id = ";
+		      stquery += fileid;
+		      ResultSet resultSet = session.execute(stquery);
 
+		      List<Row> all = resultSet.all();
+		      for (int i = 0; i < all.size(); i++)
+		      {			    	  
+			      //  System.out.println("Transaction Found It: ");
+			      String transactionid = all.get(i).getUUID("transaction_id").toString();
+			      
+			      //
+			      // create the authenticate service
+			      // as contained
+			      //
+			      r2lib.R2_Contained(transactionid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");
 				  
-				  
-				  response.getWriter().append(resp);
-			   	
-				  // Release the registered services
-			      System.out.println("BatchController prerelease: ");
-				  r2lib.RtoosRelease(jsonrtoos);
-			      System.out.println("BatchController postrelease: ");
-				  // Complete triggers the release of all "successor" services			  
-				  r2lib.RtoosUpdate("Complete", jsonrtoos);
-				  
-			      System.out.println("BatchController Ending: ");
-			  }
-			  else 
-			  {
-				  
-				  throw new IOException(jb.toString());
-			  }
+		      }    
+		      session.close();
+		      cluster.close();
+
+			  
+			  
+			  response.getWriter().append(resp);
+		   	
+			  // Release the registered services
+		      //System.out.println("BatchController prerelease: ");
+			  r2lib.R2_Release();
+		      //System.out.println("BatchController postrelease: ");
+			  // Complete triggers the release of all "successor" services			  
+			  r2lib.R2_Complete();
+			  
+		      System.out.println("BatchController Ending: ");
 			  
 		  } 
 		  catch (JSONException  e) 

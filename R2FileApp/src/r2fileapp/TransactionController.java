@@ -18,7 +18,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
-//import r2fileapp.RtoosLib;
 
 /**
  * Servlet implementation class FileImport
@@ -48,14 +47,10 @@ public class TransactionController extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		R2Lib r2lib = new R2Lib();
 		// jb is the buffer for the json object
 		StringBuffer jb = new StringBuffer();
 		String line = null;
-		String sttype = null;
 		String resp = null;
-
-		String serviceparam = null;
 		  try 
 		  {
 			  // read the input json into jb
@@ -72,141 +67,107 @@ public class TransactionController extends HttpServlet {
 	
 		  try 
 		  {
-			  // ours is coming in as a string buffer
-			  JSONObject jsonObject =  new JSONObject(jb.toString());
-		      JSONObject jsonrtoos = (JSONObject)jsonObject.get("rtoos_msg");	  
+			  // coming in as a string buffer
+			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  
+			  // get parameter from the message and make it a json object
+		      JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
+			  
+			  String fileid = r2lib.R2_GetRootID(); 
+			  
+			  //String Authenticate = jsonInput.getString("Authenticate");	// Batch or Transaction
+			  String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
+			
+			  resp = jb.toString();
+		      System.out.println("TransactionController Starting: ");
 			  
 		      // //////////////////////////////////////////////////////
 		      //
-		      // serviceparam is the parameter that is passed in
-		      // in our case it is json, so we create jsonInput
+		      // Save the transactions in the file to db
+		      // in a real world situation we would have to do some sort
+			  // of file duplication test to make sure it is idempotent
+			  // but that is beyond the scope of this demo
 		      //
 		      // //////////////////////////////////////////////////////
-			  serviceparam = jsonrtoos.getString("service_param");
-			  JSONObject jsonInput =  new JSONObject(serviceparam);
+			  //
+			  // first things first, setup connection to DB
+			  //
+			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  Session session = cluster.connect();
+			  session.execute("USE testapp");
 			  
-			  // get the value
-			  sttype = jsonrtoos.getString("type");
-			  // should always be "Event" from the platform
-			  if (sttype.equals("Event") )
+			  
+			  if (Clearing.equals("Bulk"))
 			  {
-				  //System.out.println(jb.toString());
-				  String fileid = jsonrtoos.getString("root_service");
-				  
-				  //String Authenticate = jsonInput.getString("Authenticate");	// Batch or Transaction
-				  String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
-				
-				  resp = jb.toString();
-			      System.out.println("TransactionController Starting: ");
-				  
+				  // //////////////////////////////////////////////////////
+				  // Bulk
 			      // //////////////////////////////////////////////////////
-			      //
-			      // Save the transactions in the file to db
-			      // in a real world situation we would have to do some sort
-				  // of file duplication test to make sure it is idempotent
-				  // but that is beyond the scope of this demo
-			      //
+				  
+				  //
+				  // create the bulkclear service
+				  r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/ClearBulk.html", "Clear Bulk");
+			      //System.out.println(BulkClear);
+				  					  
+				  //
+				  // get all the transactions for the file
+				  //
+				  String stquery = "SELECT *  FROM transactions WHERE ";
+			      stquery += "file_id = ";
+			      stquery += fileid;
+			      ResultSet resultSet = session.execute(stquery);
+
+			      List<Row> all = resultSet.all();
+			      for (int i = 0; i < all.size(); i++)
+			      {			    	  
+				      //  System.out.println("Transaction Found It: ");
+				      String serviceid = all.get(i).getUUID("transaction_id").toString();
+				      //
+				      // create the authenticate service
+				      //
+				      r2lib.R2_Contained(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");
+			      }    
+			  }
+			  else if (Clearing.equals("Individual") )
+			  {
+			      // //////////////////////////////////////////////////////
+				  // Individual
 			      // //////////////////////////////////////////////////////
 				  //
-				  // first things first, setup connection to DB
+				  // get all the transactions for the file
 				  //
-				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-				  Session session = cluster.connect();
-				  session.execute("USE testapp");
-				  
-				  
-			      // //////////////////////////////////////////////////////
-			      //
-			      // serviceparam is the parameter that is passed in
-			      // in our case it is json, so we create jsonInput
-			      //
-			      // //////////////////////////////////////////////////////
-				  if (Clearing.equals("Bulk"))
-				  {
-					  // //////////////////////////////////////////////////////
-					  // Bulk
-				      // //////////////////////////////////////////////////////
-					  
-					  //
-					  // create the bulkclear service
-					  //
-				      //System.out.println("OY");
-					  String BulkClear = r2lib.RtoosIndependant("http://localhost:8080/R2FileApp/ClearBulk.html", "Clear Bulk", "Register", jsonrtoos);
-				      //System.out.println(BulkClear);
-					  					  
-					  //
-					  // get all the transactions for the file
-					  //
-					  String stquery = "SELECT *  FROM transactions WHERE ";
-				      stquery += "file_id = ";
-				      stquery += fileid;
-				      ResultSet resultSet = session.execute(stquery);
+				  String stquery = "SELECT *  FROM transactions WHERE ";
+			      stquery += "file_id = ";
+			      stquery += fileid;
+			      ResultSet resultSet = session.execute(stquery);
 
-				      List<Row> all = resultSet.all();
-				      for (int i = 0; i < all.size(); i++)
-				      {			    	  
-					      //  System.out.println("Transaction Found It: ");
-					      String serviceid = all.get(i).getUUID("transaction_id").toString();
-					      //
-					      // create the authenticate service
-					      //
-					      r2lib.RtoosIndependant(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction", "Register", jsonrtoos);
-						  //
-						  // make authentication service predecessor to bulk clear
-						  //
-					      //System.out.println(serviceid);
-					      r2lib.RtoosPredecessor(serviceid, BulkClear, "Register", jsonrtoos);		
-				      }    
-				  }
-				  else if (Clearing.equals("Individual") )
-				  {
-				      // //////////////////////////////////////////////////////
-					  // Individual
-				      // //////////////////////////////////////////////////////
-					  //
-					  // get all the transactions for the file
-					  //
-					  String stquery = "SELECT *  FROM transactions WHERE ";
-				      stquery += "file_id = ";
-				      stquery += fileid;
-				      ResultSet resultSet = session.execute(stquery);
-
-				      List<Row> all = resultSet.all();
-				      for (int i = 0; i < all.size(); i++)
-				      {			    	  
-					      //  System.out.println("Transaction Found It: ");
-					      String serviceid = all.get(i).getUUID("transaction_id").toString();
-					      
-					      //
-					      // create the authenticate service
-					      //
-					      String transactionid = r2lib.RtoosIndependant(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction", "Register", jsonrtoos);
-						  
-						  //
-					      // clear individual as subsequent
-					      //
-					      r2lib.RtoosSubsequent("http://localhost:8080/R2FileApp/ClearIndividual.html", serviceid, "Register", transactionid, jsonrtoos);						
-				      }    
-				  }
-				  
-				  session.close();
-			      cluster.close();
-				  response.getWriter().append(resp);
-			   	
-				  // Release the registered services
-			      //System.out.println("OY2");
-				  r2lib.RtoosRelease(jsonrtoos);
-			      //System.out.println("OY3");
-				  // Complete triggers the release of all "successor" services			  
-				  r2lib.RtoosUpdate("Complete", jsonrtoos);
-				  
-			      System.out.println("TransactionController Ending: ");
+			      List<Row> all = resultSet.all();
+			      for (int i = 0; i < all.size(); i++)
+			      {			    	  
+				      //  System.out.println("Transaction Found It: ");
+				      String serviceid = all.get(i).getUUID("transaction_id").toString();
+				      
+				      //
+				      // create the authenticate service
+				      String transactionid = r2lib.R2_Subsequent(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");					  
+				      // create the clear individual service
+				      String clearid = r2lib.R2_Independant("http://localhost:8080/R2FileApp/ClearIndividual.html", serviceid);
+				      // set transaction as predecessor to clear
+				      r2lib.R2_Setpredecessor(transactionid, clearid);
+			      }    
 			  }
-			  else 
-			  {
-				  
-				  throw new IOException(jb.toString());
-			  }
+			  
+			  session.close();
+		      cluster.close();
+			  response.getWriter().append(resp);
+		   	
+			  // Release the registered services
+		      //System.out.println("OY2");
+			  r2lib.R2_Release();
+		      //System.out.println("OY3");
+			  // Complete triggers the release of all "successor" services			  
+			  r2lib.R2_Complete();
+			  
+		      System.out.println("TransactionController Ending: ");
 			  
 		  } 
 		  catch (JSONException  e) 

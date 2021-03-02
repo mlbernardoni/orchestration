@@ -40,7 +40,6 @@ public class FileAPI extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		R2Lib r2lib = new R2Lib();
 		// jb is the buffer for the json object
 		StringBuffer jb = new StringBuffer();
 		String line = null;
@@ -64,9 +63,9 @@ public class FileAPI extends HttpServlet {
 			  // if it comes in as HTML
 			  // ours is coming in as a string buffer
 			  JSONObject jsonObject =  new JSONObject(jb.toString());
-		      JSONObject jsonrtoos = (JSONObject)jsonObject.get("rtoos_msg");	  
+			  R2_Lib r2lib = new R2_Lib();
 			  // get the value
-			  resp = r2lib.RtoosRoot("http://localhost:8080/R2FileApp/FileImport.html", jsonrtoos.toString() );
+			  resp = r2lib.R2_Root("http://localhost:8080/R2FileApp/FileImportController.html", jsonObject.toString() );
 			  
 		  } 
 		  catch (JSONException e) 

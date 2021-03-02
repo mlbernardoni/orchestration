@@ -64,14 +64,11 @@ public class EvaluateBatch extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		R2Lib r2lib = new R2Lib();
 		// jb is the buffer for the json object
 		StringBuffer jb = new StringBuffer();
 		String line = null;
-		String sttype = null;
 		String resp = null;
 
-		String serviceparam = null;
 		  try 
 		  {
 			  // read the input json into jb
@@ -88,107 +85,82 @@ public class EvaluateBatch extends HttpServlet {
 	
 		  try 
 		  {
-			  JSONObject jsonObject =  new JSONObject(jb.toString());
-		      JSONObject jsonrtoos = (JSONObject)jsonObject.get("rtoos_msg");	  
-			  String fileid = jsonrtoos.getString("root_service");
-			  String serviceid = jsonrtoos.getString("service");
+			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  System.out.println("EvaluateBatch Starting: ");
+
 			  
-		      // //////////////////////////////////////////////////////
-		      //
-		      // serviceparam is the parameter that is passed in
-		      // in our case it is json, so we create jsonInput
-		      //
-		      // //////////////////////////////////////////////////////
-			  serviceparam = jsonrtoos.getString("service_param");
-			  JSONObject jsonInput =  new JSONObject(serviceparam);
+			  // get parameter from the message and make it a json object
+		      JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
+			  String fileid = r2lib.R2_GetRootID();
+			  
 			  String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
-			  // get the value
-			  sttype = jsonrtoos.getString("type");
-			  
-			  // should always be "Event" from the platform
-			  if (sttype.equals("Event") )
+
+			  //
+			  // first things first, setup connection to DB
+			  //
+			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  Session session = cluster.connect();
+			  session.execute("USE testapp");
+
+			  //
+			  // get all the transactions for the file
+			  //
+			  String stquery = "SELECT *  FROM transactions WHERE ";
+		      stquery += "file_id = ";
+		      stquery += fileid;
+		      ResultSet resultSet = session.execute(stquery);
+		      //
+		      // see if all good
+		      //
+		      int badtransaction = 0;
+		      List<Row> all = resultSet.all();
+		      for (int i = 0; i < all.size(); i++)
+		      {			    	  
+			      //  System.out.println("Transaction Found It: ");
+			      String status = all.get(i).getString("status");	
+			      if (status.equals("F"))	// kick off independent events
+			      {
+			    	  badtransaction = 1;	
+			      }
+		      }    
+			  if ( badtransaction == 1)
+			  {					  
+			      System.out.println("File Failed ");
+			  }
+			  else
 			  {
-				  //System.out.println(jb.toString());
-
-				  //String serviceurl = jsonrtoos.getString("service_url");
-				  //serviceparam = jsonrtoos.getString("service_param");	// not used, we will use service as transactionid
-				  resp = jb.toString();
-			      System.out.println("EvaluateBatch Starting: ");
-			      
-				  //
-				  // first things first, setup connection to DB
-				  //
-				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-				  Session session = cluster.connect();
-				  session.execute("USE testapp");
-
-				  //
-				  // get all the transactions for the file
-				  //
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      ResultSet resultSet = session.execute(stquery);
-			      //
-			      // see if all good
-			      //
-			      int badtransaction = 0;
-			      List<Row> all = resultSet.all();
-			      for (int i = 0; i < all.size(); i++)
-			      {			    	  
-				      //  System.out.println("Transaction Found It: ");
-				      String status = all.get(i).getString("status");	
-				      if (status.equals("F"))	// kick off independent events
-				      {
-				    	  badtransaction = 1;	
-				      }
-			      }    
-				  if ( badtransaction == 1)
-				  {					  
-				      System.out.println("File Failed ");
-				  }
-				  else
+			      // //////////////////////////////////////////////////////
+				  // Bulk
+			      // //////////////////////////////////////////////////////
+				  if (Clearing.equals("Bulk"))
 				  {
-				      // //////////////////////////////////////////////////////
-					  // Bulk
-				      // //////////////////////////////////////////////////////
-					  if (Clearing.equals("Bulk"))
-					  {
-						  
-						  // create the bulkclear service
-						  r2lib.RtoosSubsequent("http://localhost:8080/R2FileApp/ClearBulk.html", fileid, "New", serviceid, jsonrtoos);						
-					  }
-				      // //////////////////////////////////////////////////////
-					  // Individual
-				      // //////////////////////////////////////////////////////
-					  else if (Clearing.equals("Individual"))
-					  {						  
-					      for (int ii = 0; ii < all.size(); ii++)
-					      {
-					    	 // create the Individual clear service
-						      String transaction_id = all.get(ii).getUUID("transaction_id").toString();	
-						      r2lib.RtoosIndependant("http://localhost:8080/R2FileApp/ClearIndividual.html", transaction_id, "Register", jsonrtoos);						
-					      }    
-					      System.out.println("Evaluate Batch Prerelease: ");
-						  r2lib.RtoosRelease(jsonrtoos);
-					      System.out.println("Evaluate Batch postrelease: ");
-					  }
 					  
+					  // create the bulkclear service
+					  r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/ClearBulk.html", fileid);						
 				  }
-			      
+			      // //////////////////////////////////////////////////////
+				  // Individual
+			      // //////////////////////////////////////////////////////
+				  else if (Clearing.equals("Individual"))
+				  {						  
+				      for (int ii = 0; ii < all.size(); ii++)
+				      {
+				    	 // create the Individual clear service
+					      String transaction_id = all.get(ii).getUUID("transaction_id").toString();	
+					      r2lib.R2_Independant("http://localhost:8080/R2FileApp/ClearIndividual.html", transaction_id);						
+				      }    
+				  }
+				  
+			  }
+		      
+			  r2lib.R2_Release();
 
-			      session.close();
-			      cluster.close();
-				  // Complete triggers the release of all "successor" services			  
-				  r2lib.RtoosUpdate("Complete", jsonrtoos);
-				  
-			      System.out.println("EvaluateBatch Ending: ");
-			  }
-			  else 
-			  {
-				  
-				  throw new IOException(jb.toString());
-			  }
+		      session.close();
+		      cluster.close();
+			  // Complete triggers the release of all "successor" services			  
+			  r2lib.R2_Complete();
+			  
+		      System.out.println("EvaluateBatch Ending: ");
 			  
 		  } 
 		  catch (JSONException e ) 

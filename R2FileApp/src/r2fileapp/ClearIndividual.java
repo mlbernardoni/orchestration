@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
@@ -64,11 +63,9 @@ public class ClearIndividual extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		R2Lib r2lib = new R2Lib();
 		// jb is the buffer for the json object
 		StringBuffer jb = new StringBuffer();
 		String line = null;
-		String sttype = null;
 		String resp = null;
 
 		//String serviceparam = null;
@@ -88,65 +85,47 @@ public class ClearIndividual extends HttpServlet {
 	
 		  try 
 		  {
+			  resp = jb.toString();
+
 			  // if it comes in as HTML
 			  // ours is coming in as a string buffer
-			  JSONObject jsonObject =  new JSONObject(jb.toString());
-		      JSONObject jsonrtoos = (JSONObject)jsonObject.get("rtoos_msg");	  
-			  String fileid = jsonrtoos.getString("root_service");
-			  //String transactionid = jsonrtoos.getString("service");
+			  R2_Lib r2lib = new R2_Lib(jb.toString());
 			  
-			  // get the value
-			  sttype = jsonrtoos.getString("type");
-			  
-			  if (sttype.equals("Event") )
-			  {
-				  //System.out.println(jb.toString());
+			  String fileid = r2lib.R2_GetRootID();
+			  String serviceparam = r2lib.R2_GetParam();
+			  		      
+			  // first things first, store the transactions in DB
+			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  Session session = cluster.connect();
+			  session.execute("USE testapp");
 
-				  //String serviceurl = jsonrtoos.getString("service_url");
-				  String serviceparam = jsonrtoos.getString("service_param");	
+			  String stquery = "SELECT *  FROM transactions WHERE ";
+		      stquery += "file_id = ";
+		      stquery += fileid;
+		      stquery += " AND transaction_id = ";
+		      stquery += serviceparam;
 
-				  resp = jb.toString();
-//			      System.out.println("ClearIndividual Starting: ");
-			      
-				  // first things first, store the transactions in DB
-				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-				  Session session = cluster.connect();
-				  session.execute("USE testapp");
-
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      stquery += " AND transaction_id = ";
-			      stquery += serviceparam;
-			      //System.out.println(stquery);
-			      ResultSet resultSet = session.execute(stquery);
-			      List<Row> all = resultSet.all();
-			      for (int i = 0; i < all.size(); i++)
+		      ResultSet resultSet = session.execute(stquery);
+		      List<Row> all = resultSet.all();
+		      for (int i = 0; i < all.size(); i++)
+		      {
+		    	  
+			      String status = all.get(i).getString("status");	
+			      if (status.equals("V"))	// kick off independent events
 			      {
-			    	  
-				      String status = all.get(i).getString("status");	
-				      if (status.equals("V"))	// kick off independent events
-				      {
-						  String stquery2 = "UPDATE transactions SET status  = 'C'  WHERE file_id = " + fileid + " AND transaction_id = " + serviceparam;
-						  session.execute(stquery2);
-				      }
+					  String stquery2 = "UPDATE transactions SET status  = 'C'  WHERE file_id = " + fileid + " AND transaction_id = " + serviceparam;
+					  session.execute(stquery2);
 			      }
-			      session.close();
-			      cluster.close();
+		      }
+		      session.close();
+		      cluster.close();
 
-			    
-				  // Complete triggers the release of all "successor" services			  
-			      r2lib.RtoosUpdate("Complete", jsonrtoos);
-				  
-//			      System.out.println("ClearIndividual Ending: ");
-			  }
-			  else 
-			  {
-				  
-				  throw new IOException(jb.toString());
-			  }
+		    
+			  // Complete triggers the release of all "successor" services			  
+		      r2lib.R2_Complete();
 			  
-		  } 
+//			      System.out.println("ClearIndividual Ending: ");
+		  }
 		  catch (JSONException e ) 
 		  {
 			  /*report an error*/ 

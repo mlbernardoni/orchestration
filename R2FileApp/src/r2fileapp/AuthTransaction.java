@@ -11,8 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
-import org.json.JSONObject;
-
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -63,11 +61,9 @@ public class AuthTransaction extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		R2Lib r2lib = new R2Lib();
 		// jb is the buffer for the json object
 		StringBuffer jb = new StringBuffer();
 		String line = null;
-		String sttype = null;
 		String resp = null;
 
 		  try 
@@ -86,67 +82,53 @@ public class AuthTransaction extends HttpServlet {
 	
 		  try 
 		  {
+			  resp = jb.toString();
 			  // if it comes in as HTML
 			  // ours is coming in as a string buffer
-			  JSONObject jsonObject =  new JSONObject(jb.toString());
-		      JSONObject jsonrtoos = (JSONObject)jsonObject.get("rtoos_msg");	  
-			  String fileid = jsonrtoos.getString("root_service");
-			  String transactionid = jsonrtoos.getString("service");
+			  R2_Lib r2lib = new R2_Lib(jb.toString());
 			  
-			  // get the value
-			  sttype = jsonrtoos.getString("type");
+			  // get parameter from the message and make it a json object
+		      //JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
+			  String fileid = r2lib.R2_GetRootID();
+			  String transactionid = r2lib.R2_GetServiceID();
 			  
-			  if (sttype.equals("Event") )
-			  {
+		      
+			  // first things first, store the transactions in DB
+			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  Session session = cluster.connect();
+			  session.execute("USE testapp");
 
-				  resp = jb.toString();
-			      //System.out.println(resp);
-//			      System.out.println("AuthTransaction Starting: ");
+			  String stquery = "SELECT *  FROM transactions WHERE ";
+		      stquery += "file_id = ";
+		      stquery += fileid;
+		      stquery += " AND transaction_id = ";
+		      stquery += transactionid;
+		      //System.out.println(stquery);
+		      ResultSet resultSet = session.execute(stquery);
+		      List<Row> all = resultSet.all();
+		      for (int i = 0; i < all.size(); i++)
+		      {
+		    	  String newstatus = "V";
+			      String fromaccount = all.get(i).getString("from_account");	
+			      String toaccount = all.get(i).getString("to_account");	
 			      
-				  // first things first, store the transactions in DB
-				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-				  Session session = cluster.connect();
-				  session.execute("USE testapp");
-
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      stquery += " AND transaction_id = ";
-			      stquery += transactionid;
-			      //System.out.println(stquery);
-			      ResultSet resultSet = session.execute(stquery);
-			      List<Row> all = resultSet.all();
-			      for (int i = 0; i < all.size(); i++)
-			      {
-			    	  String newstatus = "V";
-				      String fromaccount = all.get(i).getString("from_account");	
-				      String toaccount = all.get(i).getString("to_account");	
-				      
-				      try {
-				    	  Integer.parseInt(fromaccount);
-				    	  Integer.parseInt(toaccount);
-				      } catch (NumberFormatException nfe) {
-				    	  newstatus = "F";
-				      }
-					  String stquery2 = "UPDATE transactions SET status  = '" + newstatus + "' WHERE file_id = " + fileid + " AND transaction_id = " + transactionid;
-				      session.execute(stquery2);
-
+			      try {
+			    	  Integer.parseInt(fromaccount);
+			    	  Integer.parseInt(toaccount);
+			      } catch (NumberFormatException nfe) {
+			    	  newstatus = "F";
 			      }
-			      session.close();
-			      cluster.close();
+				  String stquery2 = "UPDATE transactions SET status  = '" + newstatus + "' WHERE file_id = " + fileid + " AND transaction_id = " + transactionid;
+			      session.execute(stquery2);
 
-			    
-				  // Complete triggers the release of all "successor" services			  
-			      r2lib.RtoosUpdate("Complete", jsonrtoos);
+		      }
+		      session.close();
+		      cluster.close();
+
+		    
+			  // Complete triggers the release of all "successor" services			  
+		      r2lib.R2_Complete();
 				  
-//			      System.out.println("AuthTransaction Ending: ");
-			  }
-			  else 
-			  {
-				  
-				  throw new IOException(jb.toString());
-			  }
-			  
 		  } 
 		  catch (JSONException e ) 
 		  {
