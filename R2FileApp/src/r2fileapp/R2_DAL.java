@@ -36,7 +36,7 @@ public class R2_DAL {
 		session2 = cluster.connect();
 		session2.execute("USE rtoos");
 	}
-    public void destroy() {
+    public void CleanUp() {
     	
     	session2.close();	// not sure this does anything
     }
@@ -135,18 +135,30 @@ public class R2_DAL {
 	}
 	
 	// will return true if this service has not already been sent
-	public boolean UpdateSendStatus(JSONObject jsonobj)
+	public boolean UpdateSendStatus(JSONObject jsonobj, boolean consensus)
 	{
+	    String service = jsonobj.getString("service");	// not sure if this check will help or not, can't hurt
+	    JSONObject row = GetServiceRow(service);
+	    if (!row.getString("status").equals("R"))
+	    {
+			System.out.println("OY1");	  
+	    	return false;
+	    }
+	    
+	    String root = jsonobj.getString("root_service");
+	    String parent = jsonobj.getString("parent_service");
+	    
 		jsonobj.put("status", "P");
 	    id_to_row.put(jsonobj.getString("service"), jsonobj);
 	    String stquery = "UPDATE service_tree SET status  = 'P' WHERE ";
 	    stquery += "root_service = ";
-	    stquery += jsonobj.getString("root_service");
+	    stquery += root;
 	    stquery += " AND parent_service = ";
-	    stquery += jsonobj.getString("parent_service");
+	    stquery += parent;
 	    stquery += " AND service = ";
-	    stquery += jsonobj.getString("service");
-	    stquery += " IF status = 'R'";
+	    stquery += service;
+	    if (consensus)
+	    	stquery += " IF status = 'R'";
 
 			
 		ResultSet resultSet3 = session2.execute(stquery);

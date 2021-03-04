@@ -40,7 +40,7 @@ public class R2 extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
    	  	cluster2 = Cluster.builder().addContactPoint("127.0.0.1").build();
    	  	
-   	  	mysemaphore = new Semaphore(2000);	// must be > 1
+   	  	mysemaphore = new Semaphore(150);	// must be > 1
     }
     
     public void destroy() {
@@ -48,11 +48,11 @@ public class R2 extends HttpServlet {
     	cluster2.close();	// not sure this does anything
    }
     
-	protected void sendEvent(String rootid, String serviceid, R2_DAL dal) throws IOException {
+	protected void sendEvent(String rootid, String serviceid, boolean consensus, R2_DAL dal) throws IOException {
 		
   	  JSONObject row = dal.GetServiceRow(serviceid);
 
-		if (dal.UpdateSendStatus(row))
+		if (dal.UpdateSendStatus(row, consensus))
 		{
 			
 		  String newurl = row.getString("service_url");
@@ -60,7 +60,7 @@ public class R2 extends HttpServlet {
 		  String newparent = row.getString("parent_service");
 		  
 		  try {
-			  mysemaphore.acquire();
+			  //mysemaphore.acquire();
 		      R2SendThread T1 = new R2SendThread( rootid, newparent, serviceid, newurl, newparam, mysemaphore);
 				  
 		      T1.start();
@@ -70,7 +70,7 @@ public class R2 extends HttpServlet {
 		  }   	  
 		}
 		else
-			System.out.println("OY");	  
+			System.out.println("OY2");	  
 }
 
 	
@@ -95,7 +95,7 @@ public class R2 extends HttpServlet {
 	  
 	  dal.UpdateServiceRow(newobj);
 		
-      sendEvent( eventid,  eventid, dal);			      
+      sendEvent( eventid,  eventid, false, dal);			      
       return  eventid;
 	}
 
@@ -239,7 +239,7 @@ public class R2 extends HttpServlet {
 					  dal.UpdateBlocked(); 
 					  
 		    		  // run it
-					  sendEvent( rootid,    blockedservice, dal);
+					  sendEvent( rootid,    blockedservice, true, dal);
 		    	  }
 		      }		    	  
 		      if (testservice.equals(rootid))
@@ -273,7 +273,10 @@ public class R2 extends HttpServlet {
 		  // for example, multiple services completeing the same time
 		  // so always to a read after a write in complete and final
 		  dal.UpdateServices();
-
+		  
+		  //
+		  // first things first, check to see if there are any contained
+		  // that are keeping me from really completing
 		  ArrayList<JSONObject> blockedlist = dal.GetPreServices(eventid);
 	      int stillwaiting = 0;
 	      for (int i = 0; i < blockedlist.size(); i++)
@@ -288,10 +291,12 @@ public class R2 extends HttpServlet {
 	  
 	      if (stillwaiting == 1) 
 	      {
-			  DoFinal( jsonrtoos, dal);
+			  //DoFinal( jsonrtoos, dal);	// no need to do a final here, we know that a process is running
 	    	  return;
 	      }
 	      
+	      //
+	      // ok, we know that this service is really done (no contained)
 	      // see if anyone waiting on this
 		  blockedlist = dal.GetBlockedServices(eventid);
 	      for (int i = 0; i < blockedlist.size(); i++)
@@ -299,9 +304,14 @@ public class R2 extends HttpServlet {
 	    	  JSONObject item = blockedlist.get(i);
 		      String blocked_service = item.getString("blocked_service");
 		      String blocked_status = item.getString("status");	
+		      
+		      //
+		      // we have one waiting (a subsequent)
 		      if(blocked_status.equals("W"))
 		      {
-		    	  // mark this service as complete
+		    	  // mark this blocked row as complete
+		    	  // note marking the row in the blocked list, not the service
+		    	  // as complete
 		    	  JSONObject blockedrow = dal.GetBlockedRow(eventid, blocked_service);
 		    	  blockedrow.put("status", "C");
 				  dal.UpdateBlockedRow(blockedrow);		  
@@ -311,6 +321,7 @@ public class R2 extends HttpServlet {
 				  dal.UpdateBlocked();
 				  
 				  // see if any contained that this service has to wait for
+				  // if not send the event
 				  ArrayList<JSONObject> blockedlist2 = dal.GetPreServices(blocked_service);
 			      int notblocked = 0;
 			      for (int ii = 0; ii < blockedlist2.size(); ii++)
@@ -324,14 +335,22 @@ public class R2 extends HttpServlet {
 			      }
 		    	  if (notblocked == 0) // simple case, parent finished, can release
 		    	  {
-			    	  sendEvent( rootid, blocked_service, dal);										    	  
+		    		  if ( blockedlist2.size() > 1)
+		    			  sendEvent( rootid, blocked_service, true, dal);			
+		    		  else
+		    			  sendEvent( rootid, blocked_service, false, dal);			// no need for consensus if I am the only one
 		    	  }				    	  				  
 		      }
+		      //
+		      // there is one that is blocked by it (contained)
 		      else if (blocked_status.equals("B")) // 
 		      {
+		    	  // mark this blocked row as complete
+		    	  // note marking the row in the blocked list, not the service
+		    	  // as complete
 		    	  JSONObject blockedrow = dal.GetBlockedRow(eventid, blocked_service);
 		    	  blockedrow.put("status", "C");
-				  dal.UpdateBlockedRow(blockedrow);		  
+				  dal.UpdateBlockedRow(blockedrow);		
 				  // in complete and final, we can have concurent calls hitting the chain
 				  // for example, multiple services completeing the same time
 				  // so always to a read after a write in complete and final
@@ -360,6 +379,9 @@ public class R2 extends HttpServlet {
 					      String stillblocked = item2.getString("status");	
 					      if (stillblocked.equals("W"))
 					      {
+					    	  // mark this blocked row as complete
+					    	  // note marking the row in the blocked list, not the service
+					    	  // as complete
 					    	  JSONObject blockedrow2 = dal.GetBlockedRow(blocked_service, stillblockedservice);
 					    	  blockedrow2.put("status", "C");
 							  dal.UpdateBlockedRow(blockedrow2);		  
@@ -368,7 +390,7 @@ public class R2 extends HttpServlet {
 							  // so always to a read after a write in complete and final
 							  dal.UpdateBlocked();
 					    	  
-					    	  sendEvent( rootid, stillblockedservice, dal);				
+					    	  sendEvent( rootid, stillblockedservice, true, dal);				
 					      }
 				      }
 		    	  }
@@ -512,13 +534,14 @@ public class R2 extends HttpServlet {
 				      String neweventid = all2.get(i).getString("service");	
 				      if (servicetype.equals("I"))	// kick off independent events
 				      {
-				    	  sendEvent( rootid,    neweventid, dal);		
+				    	  sendEvent( rootid,    neweventid, false, dal);		
 				      }
 				      else if (servicetype.equals("C"))	// kick off contained events
 				      {
-				    	  sendEvent( rootid,    neweventid, dal);		
+				    	  sendEvent( rootid,    neweventid, false, dal);		
 				      }				      
 			      }
+		      dal.CleanUp(); 
 
 
 /* trash section to see if we can iterate through it all		    	  
@@ -550,7 +573,6 @@ public class R2 extends HttpServlet {
 		  {
 			  throw new IOException(jb.toString());
 		  }
-		  
 		response.getWriter().append(strep);
 		response.flushBuffer();
 		

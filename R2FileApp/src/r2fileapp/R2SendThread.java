@@ -36,6 +36,7 @@ public class R2SendThread extends Thread {
 		  try 
 		  {
 
+			  mysemaphore.acquire();
 		      JSONObject newservice = new JSONObject();
 			  newservice.put("root_service", root_id);
 			  newservice.put("parent_service", parent_id);
