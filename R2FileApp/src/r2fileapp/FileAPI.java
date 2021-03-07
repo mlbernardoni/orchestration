@@ -41,6 +41,7 @@ public class FileAPI extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// jb is the buffer for the json object
+	    System.out.println("FileAPI Received: ");
 		StringBuffer jb = new StringBuffer();
 		String line = null;
 		String resp = null;
