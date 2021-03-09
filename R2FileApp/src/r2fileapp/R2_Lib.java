@@ -126,11 +126,10 @@ public class R2_Lib {
 	// R2_Root
 	//
     // //////////////////////////////////////////////////////
-	public String R2_Root(String serviceurl, String serviceparam) throws IOException
+	public String R2_Root(String serviceid, String serviceurl, String serviceparam) throws IOException
 	{
 		  try 
 		  {
-			  String serviceid =  R2_GetID();
 			  JSONObject newservice = new JSONObject();
 			  newservice.put("service", serviceid);
 			  newservice.put("service_url", serviceurl);
@@ -150,6 +149,12 @@ public class R2_Lib {
 			  throw new IOException("Clean");
 		  }
 	}
+	// without passed in serviceid
+	public String R2_Root(String serviceurl, String serviceparam) throws IOException
+	{
+		String serviceid = R2_GetID();
+		return R2_Root(serviceid, serviceurl, serviceparam);
+	}	
 	
 	// //////////////////////////////////////////////////////
 	//

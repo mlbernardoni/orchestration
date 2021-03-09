@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<link rel = "stylesheet" href="style.css">
+<title>R2Dashboard</title>
+</head>
+<body>
+  <header>
+    <h1>R2 File Application</h1>
+  </header>
+  <form>
+     <input type ="hidden" value = "TBD" id="root" name="rootid" required>
+    <fieldset>
+      <h3>Select Parameters</h3>
+	  <label for="authdropdown">Authentication</label>
+	  <select class="authdropdown" data-style="btn-info" name="authdropdown" id="authdropdown">
+		        <option value="Transaction">Transaction</option>
+		        <option value="Batch">Batch</option>
+		</select>    
+      <br><br>
+	  <label for="cleardropdown">Clearing</label>
+	  <select class="cleardropdown" data-style="btn-info" name="cleardropdown" id="cleardropdown">
+		        <option value="Individual">Individual</option>
+		        <option value="Bulk">Bulk</option>
+		</select>    
+      <br><br>
+       <input id="fileupload" type="file" name="fileupload" />
+      <br><br>
+      <button id="reset" type ="reset">Reset</button>
+    </fieldset>
+  </form>
+  <br>
+ <button id="upload-button" onclick="uploadFile()"> Upload </button>
+ <p id="p1">Select Parameters</p>
+ <script "type="text/javascript">
+
+ 
+ function uploadFile() {
+	  var file = fileupload.files[0],
+	    read = new FileReader();
+	  if (file == undefined) {
+			document.getElementById("p1").innerHTML = 'Select a file.';
+		  return;
+	  }
+	  read.readAsBinaryString(file);	  
+	  read.onloadend = async function(){
+			document.getElementById("p1").innerHTML = "Uploading File";
+			var jsonData = {};
+			  jsonData["authdropdown"] = document.getElementById("authdropdown").value;
+			  jsonData["cleardropdown"] = document.getElementById("cleardropdown").value;;
+			  jsonData["file"] = read.result;
+			    //formData.append("file", fileupload.files[0]);
+			    //formData.append("authdropdown", authdropdown);
+			   // formData.append("cleardropdown", cleardropdown);
+			    let response  = await fetch('/upload', {
+			        headers: {
+			            'Content-Type': 'application/json'
+			          },
+			      method: "POST", 
+			      body: JSON.stringify(jsonData)
+			    });    
+			    let data = await response.text();
+				document.getElementById("p1").innerHTML = "Running: " + data;
+			      var urlstring = '/clientcallback?id=' + data;
+			    
+				  const eventSource = new EventSource(urlstring);
+				  // Handler for events without an event type specified
+				  eventSource.addEventListener("message", function(e) {
+						  //eventSource.onmessage = function(e) {
+				  //eventSource.onmessage = function(e) {
+				    // Do something - event data etc will be in e.data
+				    	var rootid = e.data.split('=')[1];
+
+					document.getElementById("p1").innerHTML = "Completed: " + rootid;
+					document.getElementById("reset").click();
+					eventSource.close();
+				  });
+				  eventSource.addEventListener("error", function() {
+				  //eventSource.onerror = function(e) {
+					  //eventSource.onmessage = function(e) {
+					    // Do something - event data etc will be in e.data
+						document.getElementById("p1").innerHTML = "ERROR";
+						eventSource.close();
+					  });
+	  }
+/*	  
+		//Declare an EventSource
+		  const eventSource = new EventSource('/clientcallback');
+		  // Handler for events without an event type specified
+		  eventSource.onmessage = (e) => {
+		    // Do something - event data etc will be in e.data
+*/		    
+	}  
+  </script>
+
+
+</body>
+</html>

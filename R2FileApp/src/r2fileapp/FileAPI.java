@@ -10,7 +10,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.File;
 //import r2fileapp.RtoosLib;
 
 /**
@@ -65,8 +67,27 @@ public class FileAPI extends HttpServlet {
 			  // ours is coming in as a string buffer
 			  JSONObject jsonObject =  new JSONObject(jb.toString());
 			  R2_Lib r2lib = new R2_Lib();
+			  String rootid = r2lib.R2_GetID();
+			  String FileName = jsonObject.getString("FileName");
+			  
+			  // data coming in in filename
+			  // put to file (Temp Directory)
+			  // future, this will be to S3
+			  // $$$$$$$$$$$$
+		      File file = File.createTempFile(rootid, ".tmp");
+		        
+		         BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+		         bw.write(FileName);
+		 
+		         bw.close();
+
+		      
+		      System.out.println(file.getAbsolutePath());
+			    
+			    jsonObject.remove("FileName");
+			    jsonObject.put("FileName", file.getAbsolutePath());
 			  // get the value
-			  resp = r2lib.R2_Root("http://localhost:8080/R2FileApp/FileImportController.html", jsonObject.toString() );
+			  resp = r2lib.R2_Root(rootid, "http://localhost:8080/R2FileApp/FileImportController.html", jsonObject.toString() );
 			  
 		  } 
 		  catch (JSONException e) 
