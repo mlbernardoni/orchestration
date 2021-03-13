@@ -497,82 +497,93 @@ public class R2 extends HttpServlet {
 			  // ours is coming in as a string buffer
 			  JSONObject jsonObject =  new JSONObject(jb.toString());
 		      String r2type = jsonObject.getString("type");	
-			  String rootid = jsonObject.getString("root_service");
 	    	  R2_DAL dal = new R2_DAL(cluster2);
-	    	  dal.RetrieveServiceTree(rootid);
-		      if (r2type.equals("Complete")) {
-		    	  
-			      JSONObject jsonrtoos = jsonObject.getJSONObject("r2_msg");	
-			      DoComplete(jsonrtoos, dal);
+		      if (r2type.equals("clean")) {
+		    	  strep = dal.DoClean();
 		      }
-		      else if (r2type.equals("Root")) {
-		    	  
-			      JSONObject jsonrtoos = jsonObject.getJSONObject("r2_msg");	
-			      strep = DoRoot(jsonrtoos, dal);
-		      }
-		      else if (r2type.equals("Clean")) {
-		    	  
-			      strep = dal.DoClean();
-		      }
-		      else if (r2type.equals("Batch")) {
-			      String serviceid = jsonObject.getString("service");
-
-		    	  JSONArray regarray = 	jsonObject.getJSONArray("r2_msg");	
-		    	  
-		    	  for (int i = 0; i < regarray.length(); i++) {
-		    		  JSONObject jsonrtoos = regarray.getJSONObject(i);
-				      //System.out.println(jsonrtoos);
-
-				      strep += DoBatch(jsonrtoos, dal) + " ";
-		    	  }
-		    	  
-		    	  // have to do after batch as "Pre" might change things
-		    	  ArrayList<JSONObject> all2 = dal.GetServiceChildren(serviceid);
-			      for (int i = 0; i < all2.size(); i++)
-			      {
-				      String servicetype = all2.get(i).getString("servicetype");	
-				      String neweventid = all2.get(i).getString("service");	
-				      if (servicetype.equals("I"))	// kick off independent events
-				      {
-				    	  sendEvent( rootid,    neweventid, false, dal);		
-				      }
-				      else if (servicetype.equals("C"))	// kick off contained events
-				      {
-				    	  sendEvent( rootid,    neweventid, false, dal);		
-				      }				      
+		      else
+		      {
+				  String rootid = jsonObject.getString("root_service");
+		    	  dal.RetrieveServiceTree(rootid);
+			      if (r2type.equals("jsontree")) {
+			    	  strep = dal.RetrieveJsonTree(rootid);
 			      }
-		      dal.CleanUp(); 
+			      else if (r2type.equals("Complete")) {
+			    	  
+				      JSONObject jsonrtoos = jsonObject.getJSONObject("r2_msg");	
+				      DoComplete(jsonrtoos, dal);
+			      }
+			      else if (r2type.equals("Root")) {
+			    	  
+				      JSONObject jsonrtoos = jsonObject.getJSONObject("r2_msg");	
+				      strep = DoRoot(jsonrtoos, dal);
+			      }
+			      else if (r2type.equals("Clean")) {
+			    	  
+				      strep = dal.DoClean();
+			      }
+			      else if (r2type.equals("Batch")) {
+				      String serviceid = jsonObject.getString("service");
 
+			    	  JSONArray regarray = 	jsonObject.getJSONArray("r2_msg");	
+			    	  
+			    	  for (int i = 0; i < regarray.length(); i++) {
+			    		  JSONObject jsonrtoos = regarray.getJSONObject(i);
+					      //System.out.println(jsonrtoos);
 
-/* trash section to see if we can iterate through it all		    	  
-		    	  Map<String, JSONObject> all = dal.GetServiceIDtoRow();
-		    	  all.forEach((id, row) ->
-		    	  {
-		    		  try {
-					      String status = row.getString("status");	
-					      String neweventid = row.getString("service");	
-					      if (status.equals("I"))	// kick off independent events
+					      strep += DoBatch(jsonrtoos, dal) + " ";
+			    	  }
+			    	  
+			    	  // have to do after batch as "Pre" might change things
+			    	  ArrayList<JSONObject> all2 = dal.GetServiceChildren(serviceid);
+				      for (int i = 0; i < all2.size(); i++)
+				      {
+					      String servicetype = all2.get(i).getString("servicetype");	
+					      String neweventid = all2.get(i).getString("service");	
+					      if (servicetype.equals("I"))	// kick off independent events
 					      {
-					    	  sendEvent(rootid, neweventid);		
+					    	  sendEvent( rootid,    neweventid, false, dal);		
 					      }
-					      else if (status.equals("C"))	// kick off contained events
+					      else if (servicetype.equals("C"))	// kick off contained events
 					      {
-					    	  sendEvent(rootid, neweventid );		
+					    	  sendEvent( rootid,    neweventid, false, dal);		
 					      }				      
-		    		  }
-					  catch (IOException e) 
-					  {
-						  throw new JSONException(jb.toString());
-					  }
-		    	  });
-*/
+				      }
+			      }
+
+
+	/* trash section to see if we can iterate through it all		    	  
+			    	  Map<String, JSONObject> all = dal.GetServiceIDtoRow();
+			    	  all.forEach((id, row) ->
+			    	  {
+			    		  try {
+						      String status = row.getString("status");	
+						      String neweventid = row.getString("service");	
+						      if (status.equals("I"))	// kick off independent events
+						      {
+						    	  sendEvent(rootid, neweventid);		
+						      }
+						      else if (status.equals("C"))	// kick off contained events
+						      {
+						    	  sendEvent(rootid, neweventid );		
+						      }				      
+			    		  }
+						  catch (IOException e) 
+						  {
+							  throw new JSONException(jb.toString());
+						  }
+			    	  });
+	*/
+		    	  
 	    	  }
 
+		      dal.CleanUp(); 
 		  }
 		  catch (JSONException e) 
 		  {
 			  throw new IOException(jb.toString());
 		  }
+		//System.out.println(strep);
 		response.getWriter().append(strep);
 		response.flushBuffer();
 		

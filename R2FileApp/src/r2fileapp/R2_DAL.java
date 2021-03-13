@@ -1,6 +1,7 @@
 package r2fileapp;
 import java.util.*;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.datastax.driver.core.Cluster;
@@ -117,6 +118,46 @@ public class R2_DAL {
 		UpdateServices();
 		
 		UpdateBlocked();
+	}
+
+	private JSONArray RenderChildren(String node) {
+	    //System.out.println(node);
+		JSONArray temparray = new JSONArray();
+		
+		ArrayList<String> childarray = id_to_children.get(node);
+		if (childarray == null)
+		{
+		    //System.out.println("OY");
+			return temparray;
+		}
+		
+		for (int i = 0; i < childarray.size(); i++)
+		{
+			if (!node.equals(childarray.get(i))) 	// root is a parent to itself, so bail
+			{
+		    	JSONObject jsonnode = new JSONObject();		
+				JSONObject row = id_to_row.get(childarray.get(i));
+		    	jsonnode.put("record", row);
+		    	JSONArray newchildarray = RenderChildren(childarray.get(i));
+		    	jsonnode.put("children", newchildarray);
+		    	temparray.put(jsonnode);
+			}
+				
+		}
+		
+		return temparray;
+	}
+	
+	public String RetrieveJsonTree(String root)
+	{
+    	JSONObject jsonnode = new JSONObject();		
+		JSONObject row = id_to_row.get(root);
+    	jsonnode.put("record", row);
+    	JSONArray newchildarray = RenderChildren(root);
+    	jsonnode.put("children", newchildarray);				
+		
+	    //System.out.println(jsonnode.toString());
+	    return jsonnode.toString();
 	}
 	
 	public String GetRoot()
