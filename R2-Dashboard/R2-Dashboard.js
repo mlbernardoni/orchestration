@@ -25,6 +25,42 @@ app.get('/', function(request,response){
 	response.sendFile(path.join(__dirname,'./R2Upload.html'));
 });
 
+app.post('/upload_ms', function(request,response){
+	//console.log(request);
+	//console.log(request.body);
+	//console.log("Upload");
+	var rootid = "";
+    var file = request.body.file;
+    var auth = request.body.authdropdown;
+    var clear = request.body.cleardropdown ;
+	//console.log(file);
+	console.log("Starting: ");
+    var today = new Date();
+    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();	
+	console.log(time);
+  	axios.post( 'http://localhost:8080/R2FileApp/FileAPI_ms.html', 
+  			  {FileName: file, Authenticate: auth, Clearing: clear } )
+  	  .then(function (res) {
+  	    var today = new Date();
+  	    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();	
+  		console.log("Ending: ");
+  		console.log(time);
+  		  rootid = res.data;
+   		 // console.log(res.data);
+   		  response.writeHead(200,{
+   			  "Content-Type" : "text/html"
+ 		  });
+  		  //console.log("File has been submitted");
+  			response.write( rootid);
+  			 response.end();
+   	    	    
+   	  })
+   	  .catch(function (error) {
+   	    console.log(error);
+   	  });	
+ 	  });
+
+
 app.post('/upload', function(request,response){
 			//console.log(request);
 			//console.log(request.body);
@@ -36,6 +72,10 @@ app.post('/upload', function(request,response){
 			//console.log(file);
 			//console.log(auth);
 			//console.log(clear);
+		    var today = new Date();
+		    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();	
+			console.log("Starting: ");
+			console.log(time);
 		  	axios.post( 'http://localhost:8080/R2FileApp/FileAPI.html', 
 		  			  {FileName: file, Authenticate: auth, Clearing: clear } )
 		  	  .then(function (res) {
@@ -69,6 +109,10 @@ app.get('/clientcallback', function(request,response){
 	  		  {
 	  			  // console.log('Callbacked'); 
 	  				response.write("data: " + "apfoafha;lfjoaprioepoiova;lvnasdv=" + rootid + '\n\n'); 			  
+	  			    var today = new Date();
+	  			    var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+	  				console.log("Ending: ");
+	  				console.log(time);
 	  		  });
 	//response.write("OY");
 	//response.end();

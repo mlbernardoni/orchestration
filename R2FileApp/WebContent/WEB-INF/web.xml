@@ -99,4 +99,76 @@
     <servlet-name>Finally</servlet-name>
     <url-pattern>/Finally.html</url-pattern>
   </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>FileAPI_ms</servlet-name>
+    <servlet-class>r2fileapp.FileAPI_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileAPI_ms</servlet-name>
+    <url-pattern>/FileAPI_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>FileImportController_ms</servlet-name>
+    <servlet-class>r2fileapp.FileImportController_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileImportController_ms</servlet-name>
+    <url-pattern>/FileImportController_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>BatchController_ms</servlet-name>
+    <servlet-class>r2fileapp.BatchController_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>BatchController_ms</servlet-name>
+    <url-pattern>/BatchController_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>EvaluateBatch_ms</servlet-name>
+    <servlet-class>r2fileapp.EvaluateBatch_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>EvaluateBatch_ms</servlet-name>
+    <url-pattern>/EvaluateBatch_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>TransactionController_ms</servlet-name>
+    <servlet-class>r2fileapp.TransactionController_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TransactionController_ms</servlet-name>
+    <url-pattern>/TransactionController_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>AuthTransaction_ms</servlet-name>
+    <servlet-class>r2fileapp.AuthTransaction_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AuthTransaction_ms</servlet-name>
+    <url-pattern>/AuthTransaction_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>ClearBulk_ms</servlet-name>
+    <servlet-class>r2fileapp.ClearBulk_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ClearBulk_ms</servlet-name>
+    <url-pattern>/ClearBulk_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>ClearIndividual_ms</servlet-name>
+    <servlet-class>r2fileapp.ClearIndividual_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ClearIndividual_ms</servlet-name>
+    <url-pattern>/ClearIndividual_ms.html</url-pattern>
+  </servlet-mapping>
 </web-app>
