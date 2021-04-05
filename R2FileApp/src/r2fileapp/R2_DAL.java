@@ -178,9 +178,9 @@ public class R2_DAL {
 	// will return true if this service has not already been sent
 	public boolean UpdateSendStatus(JSONObject jsonobj, boolean consensus)
 	{
-	    String service = jsonobj.getString("service");	// not sure if this check will help or not, can't hurt
-	    JSONObject row = GetServiceRow(service);
-	    if (!row.getString("status").equals("R"))
+	    
+		// not sure if this check will help or not, can't hurt
+	    if (!jsonobj.getString("status").equals("R"))
 	    {
 			System.out.println("OY1");	  
 	    	return false;
@@ -188,6 +188,7 @@ public class R2_DAL {
 	    
 	    String root = jsonobj.getString("root_service");
 	    String parent = jsonobj.getString("parent_service");
+	    String service = jsonobj.getString("service");
 	    
 		jsonobj.put("status", "P");
 	    id_to_row.put(jsonobj.getString("service"), jsonobj);

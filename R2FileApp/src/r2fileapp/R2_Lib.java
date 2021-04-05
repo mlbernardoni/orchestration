@@ -89,37 +89,31 @@ public class R2_Lib {
     // //////////////////////////////////////////////////////
 	public String R2_GetParam()  throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		return r2json.getString("service_param");
 	}
 	public String R2_GetRootID()  throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		return r2json.getString("root_service");
 	}
 	public String R2_GetParentID()  throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		return r2json.getString("parent_service");
 	}
 	public String R2_GetServiceID() throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		return r2json.getString("service");
 	}
-
+	
+	public void R2_IsValidJson() throws IOException{
+		if (r2json == null)
+		{
+			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Json parameter");			
+		}
+	}
 
     // //////////////////////////////////////////////////////
 	//
@@ -165,10 +159,7 @@ public class R2_Lib {
 	// //////////////////////////////////////////////////////
 	private String R2_FlowService(String serviceid, String serviceurl, String serviceparam, String servicetype) throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		  try 
 		  {
 			  String rootid = r2json.getString("root_service");
@@ -196,17 +187,17 @@ public class R2_Lib {
 
 	// //////////////////////////////////////////////////////
 	//
-	// R2_Independant
+	// R2_Independent
 	// with passed in serviceid
 	//
     // //////////////////////////////////////////////////////
-	public String R2_Independant(String serviceid, String serviceurl, String serviceparam) throws IOException
+	public String R2_Independent(String serviceid, String serviceurl, String serviceparam) throws IOException
 	{
 		return R2_FlowService(serviceid, serviceurl, serviceparam, "I");
 	}	
 
 	// without passed in serviceid
-	public String R2_Independant(String serviceurl, String serviceparam) throws IOException
+	public String R2_Independent(String serviceurl, String serviceparam) throws IOException
 	{
 		String serviceid = R2_GetID();
 		return R2_FlowService(serviceid, serviceurl, serviceparam, "I");
@@ -277,10 +268,7 @@ public class R2_Lib {
 	public void R2_Setpredecessor(String preid, String postid) throws IOException
 	{
 	      //System.out.println(postid);
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		  try 
 		  {
 			  String rootid = r2json.getString("root_service");
@@ -306,10 +294,7 @@ public class R2_Lib {
     // //////////////////////////////////////////////////////
 	public String R2_Release() throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		  try 
 		  {
 			  JSONObject newrequest = new JSONObject();
@@ -337,10 +322,7 @@ public class R2_Lib {
     // //////////////////////////////////////////////////////
 	public String R2_Complete() throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		  try 
 		  {
 			  String rootid = r2json.getString("root_service");
