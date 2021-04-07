@@ -147,7 +147,7 @@ public class EvaluateBatch extends HttpServlet {
 				      {
 				    	 // create the Individual clear service
 					      String transaction_id = all.get(ii).getUUID("transaction_id").toString();	
-					      r2lib.R2_Independant("http://localhost:8080/R2FileApp/ClearIndividual.html", transaction_id);						
+					      r2lib.R2_Independent("http://localhost:8080/R2FileApp/ClearIndividual.html", transaction_id);						
 				      }    
 				  }
 				  

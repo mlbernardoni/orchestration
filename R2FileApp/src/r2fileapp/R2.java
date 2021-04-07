@@ -79,24 +79,30 @@ public class R2 extends HttpServlet {
 	//	DoRoot
 	//
 	// /////////////////////////////////////////////
-	protected String DoRoot ( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
-		
-	  JSONObject newobj = new JSONObject();		
-	  String eventid = jsonrtoos.getString("service");
-	  newobj.put("root_service", eventid);
-	  newobj.put("parent_service", eventid);
-	  newobj.put("service", eventid);
-	  String serviceurl = jsonrtoos.getString("service_url");
-	  newobj.put("service_url", serviceurl);
-	  String serviceparam = jsonrtoos.getString("service_param");
-	  newobj.put("service_param", serviceparam);
-	  newobj.put("status", "R");
-	  newobj.put("servicetype", "R");
-	  
-	  dal.UpdateServiceRow(newobj);
-		
-      sendEvent( eventid,  eventid, false, dal);			      
-      return  eventid;
+	protected String DoRoot(JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+
+		JSONObject newobj = new JSONObject();
+		String eventid = jsonrtoos.getString("service");
+
+		// Prevents duplicate root object from being created
+		if (dal.GetServiceRow(eventid) != null) {
+			return eventid;
+		}
+
+		newobj.put("root_service", eventid);
+		newobj.put("parent_service", eventid);
+		newobj.put("service", eventid);
+		String serviceurl = jsonrtoos.getString("service_url");
+		newobj.put("service_url", serviceurl);
+		String serviceparam = jsonrtoos.getString("service_param");
+		newobj.put("service_param", serviceparam);
+		newobj.put("status", "R");
+		newobj.put("servicetype", "R");
+
+		dal.UpdateServiceRow(newobj);
+
+		sendEvent(eventid, eventid, false, dal);
+		return eventid;
 	}
 
 	// /////////////////////////////////////////////

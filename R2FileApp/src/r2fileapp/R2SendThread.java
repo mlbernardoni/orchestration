@@ -47,12 +47,9 @@ public class R2SendThread extends Thread {
 		      //System.out.println(newservice.toString());
 			  
 			  URL url = new URL(new_url);
-			  HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			  // For a PUT request
-			  connection.setRequestMethod("POST");
-			  connection.setRequestProperty("Content-Type", "application/json; utf-8");
+			  HttpURLConnection connection = R2_Utilities.setupPostRequest(url); 
 			  connection.setRequestProperty("Connection", "close");
-			  connection.setDoOutput(true);
+
 			  DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
 			  wr.writeBytes(newrequest.toString());
 			  wr.flush();
