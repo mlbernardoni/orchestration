@@ -12,12 +12,12 @@ import com.datastax.driver.core.Session;
 //import com.datastax.driver.core.Cluster;  
 
 public class R2_DAL {
-	private Map<String, JSONObject> id_to_row;
-	private Map<String, ArrayList<String>> id_to_children;
+	private HashMap<String, JSONObject> id_to_row;
+	private HashMap<String, ArrayList<String>> id_to_children;
 
 	private HashMap<String, ArrayList<String>> pre_service_list;
 	private HashMap<String, ArrayList<String>> blocked_service_list;
-	private Map<String, JSONObject> blocked_list;
+	private HashMap<String, JSONObject> blocked_list;
 	
 	private String rootid;
 	
@@ -65,11 +65,7 @@ public class R2_DAL {
 		    String parent = jsonobj.getString("parent_service");
 		    id_to_row.put(service, jsonobj);
 		    
-		    if (id_to_children.get(parent) == null)
-    		{
-		    	id_to_children.put(parent, new ArrayList<String>());
-    		}
-		    id_to_children.get(parent).add(service);
+		    id_to_children = R2_Utilities.initializeList(id_to_children, parent, service); 
 	    }	
 	}
 	
@@ -94,19 +90,9 @@ public class R2_DAL {
 		    String key = pre + blocked;
 		    
 		    blocked_list.put(key, jsonobj);
-
-		    if (pre_service_list.get(blocked) == null)
-    		{
-		    	pre_service_list.put(blocked, new ArrayList<String>());
-    		}
-		    pre_service_list.get(blocked).add(key);
-
 		    
-		    if (blocked_service_list.get(pre) == null)
-    		{
-		    	blocked_service_list.put(pre, new ArrayList<String>());
-    		}
-		    blocked_service_list.get(pre).add(key);
+		    pre_service_list = R2_Utilities.initializeList(pre_service_list, blocked, key); 
+		    blocked_service_list = R2_Utilities.initializeList(blocked_service_list, pre, key); 
 	  }	
 	}
 
@@ -217,11 +203,7 @@ public class R2_DAL {
 	    String parent = jsonobj.getString("parent_service");
 	    id_to_row.put(service, jsonobj);
 	    
-	    if (id_to_children.get(parent) == null)
-		{
-	    	id_to_children.put(parent, new ArrayList<String>());
-		}
-	    id_to_children.get(parent).add(service);
+	    id_to_children = R2_Utilities.initializeList(id_to_children, parent, service); 
 	    
 	    // we don't have to get the data again after an update to service tree
 	    // as the service is the only one hitting this

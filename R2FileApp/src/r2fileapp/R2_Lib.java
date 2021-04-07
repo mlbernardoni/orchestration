@@ -395,15 +395,12 @@ public class R2_Lib {
 		  while (retries > 0)
 		  {
 			  try 
-			  {			  
-				  HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			  {		
+				  HttpURLConnection connection = R2_Utilities.setupPostRequest(url); 
+				  
 				  connection.setConnectTimeout(R2_TIMEOUT);		// TIMEOUT - server took to long to even accept the request
 				  connection.setReadTimeout(R2_TIMEOUT);		// TIMEOUT - server accepted the request but taking too long, will through timeout exception
 				  
-				  // For a POST request
-				  connection.setRequestMethod("POST");
-				  connection.setRequestProperty("Content-Type", "application/json; utf-8");
-				  connection.setDoOutput(true);
 
 				  //System.out.println("R2Lib Sendevent Retries =  " + retries);
 				  DataOutputStream wr = new DataOutputStream(connection.getOutputStream());
