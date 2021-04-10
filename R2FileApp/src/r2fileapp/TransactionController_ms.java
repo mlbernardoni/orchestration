@@ -3,6 +3,7 @@ package r2fileapp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -112,6 +113,8 @@ public class TransactionController_ms extends HttpServlet {
 			      stquery += "file_id = ";
 			      stquery += fileid;
 			      ResultSet resultSet = session.execute(stquery);
+				  session.close();
+			      cluster.close();
 
 			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
@@ -140,6 +143,8 @@ public class TransactionController_ms extends HttpServlet {
 			      stquery += "file_id = ";
 			      stquery += fileid;
 			      ResultSet resultSet = session.execute(stquery);
+				  session.close();
+			      cluster.close();
 
 			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
@@ -151,13 +156,61 @@ public class TransactionController_ms extends HttpServlet {
 				      // create the authenticate service
 				      String parm = fileid + '=' + serviceid;
 				      r2lib.SendEvent("http://localhost:8080/R2FileApp/AuthTransaction_ms.html", parm);					  
-				      // create the clear individual service
 				      r2lib.SendEvent("http://localhost:8080/R2FileApp/ClearIndividual_ms.html", parm);
 			      }    
 			  }
+			  else if (Clearing.equals("IndividualA") )
+			  {
+			      // //////////////////////////////////////////////////////
+				  // Individual
+			      // //////////////////////////////////////////////////////
+				  //
+				  // get all the transactions for the file
+				  //
+				  String stquery = "SELECT *  FROM transactions WHERE ";
+			      stquery += "file_id = ";
+			      stquery += fileid;
+			      ResultSet resultSet = session.execute(stquery);
+				  session.close();
+			      cluster.close();
+
+			      List<Row> all = resultSet.all();
+				  CountDownLatch countDownLatch = new CountDownLatch(all.size());
+			      for (int i = 0; i < all.size(); i++)
+			      {			    	  
+				      //  System.out.println("Transaction Found It: ");
+				      String serviceid = all.get(i).getUUID("transaction_id").toString();
+				      
+				      //
+				      // create the authenticate service
+				      String parm = fileid + '=' + serviceid;
+				      r2lib.SendEventA("http://localhost:8080/R2FileApp/AuthTransaction_ms.html", parm, countDownLatch);					  
+			      }    
+			      try {
+						countDownLatch.await();
+				      } catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+				 	     System.out.println(e);
+				      } 
+				  CountDownLatch countDownLatch2 = new CountDownLatch(all.size());
+			      for (int i = 0; i < all.size(); i++)
+			      {			    	  
+				      //  System.out.println("Transaction Found It: ");
+				      String serviceid = all.get(i).getUUID("transaction_id").toString();
+				      
+				      //
+				      // create the authenticate service
+				      String parm = fileid + '=' + serviceid;
+				      r2lib.SendEventA("http://localhost:8080/R2FileApp/ClearIndividual_ms.html", parm, countDownLatch2);
+			      }    
+			      try {
+						countDownLatch2.await();
+				      } catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+				 	     System.out.println(e);
+				      } 
+			  }
 			  
-			  session.close();
-		      cluster.close();
 			  response.getWriter().append(resp);
 		   	
 			  

@@ -115,6 +115,8 @@ public class FileImportController extends HttpServlet {
 							UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");
 			  }
 			  csvReader.close();
+			  session.close();
+		      cluster.close();
 
 			  
 			  if (Authenticate.equals("Batch"))
@@ -131,8 +133,6 @@ public class FileImportController extends HttpServlet {
 			      // //////////////////////////////////////////////////////
 				  r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/TransactionController.html", serviceparam);
 			  }
-			  session.close();
-		      cluster.close();
 			  
 		   	
 			  // Complete triggers the release of all "successor" services			  

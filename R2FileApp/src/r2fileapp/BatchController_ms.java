@@ -128,6 +128,8 @@ public class BatchController_ms extends HttpServlet {
 		   	
 		      System.out.println("BatchController_ms Ending: ");
 			  
+		      session.close();
+		      cluster.close();
 		  } 
 		  catch (JSONException  e) 
 		  {

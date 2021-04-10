@@ -2,6 +2,8 @@ package r2fileapp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -89,7 +91,14 @@ public class FileAPI_ms extends HttpServlet {
 			    jsonObject.put("FileName", file.getAbsolutePath());
 			    jsonObject.put("rootid", rootid);
 			  // get the value
+			  //  CountDownLatch countDownLatch = new CountDownLatch(1);
 			  r2lib.SendEvent( "http://localhost:8080/R2FileApp/FileImportController_ms.html", jsonObject.toString() );
+		    //  try {
+			//	countDownLatch.await();
+		   //   } catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+		 	 //    System.out.println(e);
+		     // } 
 			  
 		  } 
 		  catch (JSONException e) 

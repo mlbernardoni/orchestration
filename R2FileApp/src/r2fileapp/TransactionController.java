@@ -115,6 +115,8 @@ public class TransactionController extends HttpServlet {
 			      stquery += "file_id = ";
 			      stquery += fileid;
 			      ResultSet resultSet = session.execute(stquery);
+				  session.close();
+			      cluster.close();
 
 			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
@@ -139,6 +141,8 @@ public class TransactionController extends HttpServlet {
 			      stquery += "file_id = ";
 			      stquery += fileid;
 			      ResultSet resultSet = session.execute(stquery);
+				  session.close();
+			      cluster.close();
 
 			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
@@ -150,14 +154,12 @@ public class TransactionController extends HttpServlet {
 				      // create the authenticate service
 				      String transactionid = r2lib.R2_Subsequent(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");					  
 				      // create the clear individual service
-				      String clearid = r2lib.R2_Independant("http://localhost:8080/R2FileApp/ClearIndividual.html", serviceid);
+				      String clearid = r2lib.R2_Independent("http://localhost:8080/R2FileApp/ClearIndividual.html", serviceid);
 				      // set transaction as predecessor to clear
 				      r2lib.R2_Setpredecessor(transactionid, clearid);
 			      }    
 			  }
 			  
-			  session.close();
-		      cluster.close();
 			  response.getWriter().append(resp);
 		   	
 			  // Release the registered services

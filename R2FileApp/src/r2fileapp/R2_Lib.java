@@ -23,7 +23,7 @@ public class R2_Lib {
 	private JSONObject r2json = null;
 	private int R2_TIMEOUT = 600000;
 	private int R2_TIMEOUT_WAIT = 3000;
-	private int R2_RETRIES = 3;
+	private int R2_TRIES = 3;
 	private String R2_URL = "";
 	
 	//
@@ -51,7 +51,7 @@ public class R2_Lib {
 	private void R2_Init()
 	{
 		// add init from file here
-		R2_URL = "http://localhost:8080/R2FileApp/R2.html";
+		R2_URL = "http://localhost:8080/R2s/R2s.html";
 	}
 	
 	// 
@@ -65,9 +65,9 @@ public class R2_Lib {
 	{
 		R2_TIMEOUT_WAIT = newwait;
 	}
-	public void R2_SetRetries(int newretries) 
+	public void R2_SetTries(int newretries) 
 	{
-		R2_RETRIES = newretries;
+		R2_TRIES = newretries;
 	}
 
 	
@@ -89,43 +89,70 @@ public class R2_Lib {
     // //////////////////////////////////////////////////////
 	public String R2_GetParam()  throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		return r2json.getString("service_param");
 	}
 	public String R2_GetRootID()  throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		return r2json.getString("root_service");
 	}
 	public String R2_GetParentID()  throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		return r2json.getString("parent_service");
 	}
 	public String R2_GetServiceID() throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		return r2json.getString("service");
 	}
-
+	
+	public void R2_IsValidJson() throws IOException{
+		if (r2json == null)
+		{
+			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Json parameter");			
+		}
+	}
 
     // //////////////////////////////////////////////////////
 	//
 	// R2_Root
 	//
     // //////////////////////////////////////////////////////
+	public String R2_Root(String serviceid, String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		  try 
+		  {
+			  JSONObject newservice = new JSONObject();
+			  newservice.put("service", serviceid);
+			  newservice.put("service_url", serviceurl);
+			  newservice.put("service_param", serviceparam);
+			  newservice.put("service_type", "Root");
+			  newservice.put("tries", tries);
+			  newservice.put("timeout", timeout);
+			  newservice.put("timeoutwait", timeoutwait);
+			  
+			  JSONObject newrequest = new JSONObject();
+			  newrequest.put("r2_msg", newservice);
+			  newrequest.put("root_service", serviceid);
+			  newrequest.put("type", "Root");
+			  String resp = SendEvent(newrequest.toString());	  
+			  return resp;
+
+		  } 
+		  catch (JSONException  e) 
+		  {
+			  throw new IOException("Clean");
+		  }
+	}
+	
+	public String R2_Root(String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		String serviceid = R2_GetID();
+		return R2_Root(serviceid, serviceurl, serviceparam, tries, timeout, timeoutwait);
+	}	
+	
 	public String R2_Root(String serviceid, String serviceurl, String serviceparam) throws IOException
 	{
 		  try 
@@ -163,12 +190,38 @@ public class R2_Lib {
 	//
 	//
 	// //////////////////////////////////////////////////////
+	private String R2_FlowService(String serviceid, String serviceurl, String serviceparam, String servicetype, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		R2_IsValidJson(); 
+		  try 
+		  {
+			  String rootid = r2json.getString("root_service");
+			  String parentid = r2json.getString("service");
+			
+			  JSONObject newservice = new JSONObject();
+			  newservice.put("root_service", rootid);
+			  newservice.put("parent_service", parentid);
+			  newservice.put("service", serviceid);
+			  newservice.put("service_url", serviceurl);
+			  newservice.put("service_param", serviceparam);
+			  newservice.put("service_type", servicetype);
+			  newservice.put("tries", tries);
+			  newservice.put("timeout", timeout);
+			  newservice.put("timeoutwait", timeoutwait);
+		
+			  //newrequest.put("type", "Batch");
+			  r2regarray.put(newservice);
+		
+			  return serviceid;
+		  } 
+		  catch (JSONException  e) 
+		  {
+			  throw new IOException(r2json.toString());
+		  }
+	}
 	private String R2_FlowService(String serviceid, String serviceurl, String serviceparam, String servicetype) throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		  try 
 		  {
 			  String rootid = r2json.getString("root_service");
@@ -196,17 +249,28 @@ public class R2_Lib {
 
 	// //////////////////////////////////////////////////////
 	//
-	// R2_Independant
+	// R2_Independent
 	// with passed in serviceid
 	//
     // //////////////////////////////////////////////////////
-	public String R2_Independant(String serviceid, String serviceurl, String serviceparam) throws IOException
+	public String R2_Independent(String serviceid, String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "I", tries, timeout, timeoutwait);
+	}	
+
+	// without passed in serviceid
+	public String R2_Independent(String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		String serviceid = R2_GetID();
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "I", tries, timeout, timeoutwait);
+	}	
+	public String R2_Independent(String serviceid, String serviceurl, String serviceparam) throws IOException
 	{
 		return R2_FlowService(serviceid, serviceurl, serviceparam, "I");
 	}	
 
 	// without passed in serviceid
-	public String R2_Independant(String serviceurl, String serviceparam) throws IOException
+	public String R2_Independent(String serviceurl, String serviceparam) throws IOException
 	{
 		String serviceid = R2_GetID();
 		return R2_FlowService(serviceid, serviceurl, serviceparam, "I");
@@ -219,6 +283,17 @@ public class R2_Lib {
 	// with passed in serviceid
 	//
     // //////////////////////////////////////////////////////
+	public String R2_Contained(String serviceid, String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "C", tries, timeout, timeoutwait);
+	}	
+
+	// without passed in serviceid
+	public String R2_Contained(String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		String serviceid = R2_GetID();
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "C", tries, timeout, timeoutwait);
+	}	
 	public String R2_Contained(String serviceid, String serviceurl, String serviceparam) throws IOException
 	{
 		return R2_FlowService(serviceid, serviceurl, serviceparam, "C");
@@ -237,6 +312,17 @@ public class R2_Lib {
 	// with passed in serviceid
 	//
     // //////////////////////////////////////////////////////
+	public String R2_Subsequent(String serviceid, String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "S", tries, timeout, timeoutwait);
+	}	
+
+	// without passed in serviceid
+	public String R2_Subsequent(String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		String serviceid = R2_GetID();
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "S", tries, timeout, timeoutwait);
+	}	
 	public String R2_Subsequent(String serviceid, String serviceurl, String serviceparam) throws IOException
 	{
 		return R2_FlowService(serviceid, serviceurl, serviceparam, "S");
@@ -256,6 +342,17 @@ public class R2_Lib {
 	// with passed in serviceid
 	//
     // //////////////////////////////////////////////////////
+	public String R2_Final(String serviceid, String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "F", tries, timeout, timeoutwait);
+	}	
+
+	// without passed in serviceid
+	public String R2_Final(String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		String serviceid = R2_GetID();
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "F", tries, timeout, timeoutwait);
+	}	
 	public String R2_Final(String serviceid, String serviceurl, String serviceparam) throws IOException
 	{
 		return R2_FlowService(serviceid, serviceurl, serviceparam, "F");
@@ -277,10 +374,7 @@ public class R2_Lib {
 	public void R2_Setpredecessor(String preid, String postid) throws IOException
 	{
 	      //System.out.println(postid);
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		  try 
 		  {
 			  String rootid = r2json.getString("root_service");
@@ -306,10 +400,7 @@ public class R2_Lib {
     // //////////////////////////////////////////////////////
 	public String R2_Release() throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		  try 
 		  {
 			  JSONObject newrequest = new JSONObject();
@@ -337,10 +428,7 @@ public class R2_Lib {
     // //////////////////////////////////////////////////////
 	public String R2_Complete() throws IOException
 	{
-		if (r2json == null)
-		{
-			  throw new IOException("R2_Lib not initialized correctly, use the constructor with the R2_Jason parameter");			
-		}
+		R2_IsValidJson(); 
 		  try 
 		  {
 			  String rootid = r2json.getString("root_service");
@@ -407,10 +495,10 @@ public class R2_Lib {
 		  StringBuffer resp = new StringBuffer();
 		  
 		  URL url = new URL(R2_URL);
-		  int retries = R2_RETRIES;
+		  int tries = R2_TRIES;
 		  String errorstring = "";
 		  
-		  while (retries > 0)
+		  while (tries > 0)
 		  {
 			  try 
 			  {			  
@@ -449,7 +537,7 @@ public class R2_Lib {
 					  errorstring = ("R2Lib Ret Code: " + responseCode);
 					  //System.out.println("R2Lib Ret Code: " + responseCode);
 					  //throw new IOException("IO Error sending to R2 ret code: " + responseCode);
-					  retries--;
+					  tries--;
 					  try 
 					  {
 						  TimeUnit.MILLISECONDS.sleep(R2_TIMEOUT_WAIT);	// add a little wait, to see if root will end
@@ -467,7 +555,7 @@ public class R2_Lib {
 				  errorstring = ("R2Lib Timeout: " + e.toString());
 				  //System.out.println("R2Lib Timeout: " + e.toString());
 				  //throw new IOException("R2Lib Timeout: " + e.toString());	// catch TIMEOUT here
-				  retries--;
+				  tries--;
 				  try 
 				  {
 					  TimeUnit.MILLISECONDS.sleep(R2_TIMEOUT_WAIT);	// add a little wait, to see if root will end
@@ -481,7 +569,7 @@ public class R2_Lib {
 			  { 
 				  errorstring = ("R2Lib Exception: " + e.toString());
 				  System.out.println("R2Lib Exception: " + e.toString());
-				  retries--;
+				  tries--;
 				  try 
 				  {
 					  TimeUnit.MILLISECONDS.sleep(R2_TIMEOUT_WAIT);	// add a little wait, to see if root will end

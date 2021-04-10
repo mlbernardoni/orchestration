@@ -116,6 +116,8 @@ public class ClearIndividual_ms extends HttpServlet {
 			      }
 		      }
 
+		      session.close();
+		      cluster.close();
 		    
 			  
 //			      System.out.println("ClearIndividual Ending: ");
