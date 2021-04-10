@@ -64,7 +64,8 @@ public class Finally extends HttpServlet {
 			  R2_Lib r2lib = new R2_Lib(jb.toString());
 			  
 			  
-		      System.out.println("FileImport Chain ENDED!!!! ");
+		      System.out.println("FileImport Chain ERRORED!!!! ");
+		      System.out.println(r2lib.R2_GetParam());
 		      
 		      r2lib.R2_Complete();
 		  }

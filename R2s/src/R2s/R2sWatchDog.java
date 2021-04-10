@@ -27,15 +27,13 @@ public class R2sWatchDog implements Runnable
 			      t.join();   // $$ may want to put a timeout here
 			      
 			      if (T1.retcode != 200) {
-					  // $$ add log error here
-					  System.out.println("R2s watchdog: " + T1.errorstring);
+					  R2s.OnError(myrow, T1.errorstring);
 			    	  
 			      }
 			      
 			  }
 			  catch (Exception e) { 
-				  // $$ add log error here
-				  System.out.println("R2s watchdog: " + e.toString());
+				  R2s.OnError(myrow, e.toString());
 			  }   	  
 	   }
 

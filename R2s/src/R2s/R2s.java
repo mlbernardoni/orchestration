@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.util.concurrent.*;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -29,7 +28,7 @@ import java.util.ArrayList;
 @WebServlet("/TestServlet")
 public class R2s extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	public Cluster cluster2;
+	public static Cluster cluster2;
 	public static Semaphore mysemaphore;
 	
 	private static int R2s_TRIES  = 1;
@@ -41,6 +40,59 @@ public class R2s extends HttpServlet {
      */
     public R2s() {
         super();
+    }
+    
+    public static void OnError(JSONObject myrow, String errorstring) {
+    	String err = "R2s Error: " + errorstring;
+		System.out.println(err);    	
+  	    R2_DAL dal = new R2_DAL(cluster2);
+ 	    String rootid = myrow.getString("root_service");
+ 	    String partentid = myrow.getString("parent_service");
+ 	    String eventid = myrow.getString("service");
+ 	    dal.RetrieveServiceTree(rootid);
+  	    JSONObject row = dal.GetServiceRow(eventid);
+	  
+		row.put("status", "E");
+		row.put("errorstring", errorstring);
+		dal.UpdateServiceRow(row);		  	      
+
+		String testparent = partentid;
+		String testservice = eventid;
+		while (testservice != "")
+		{
+			  ArrayList<JSONObject> childlist = dal.GetServiceChildren(testservice);
+		      for (int i = 0; i < childlist.size(); i++)
+		      {
+		    	  JSONObject item = childlist.get(i);
+			      String servicetype = item.getString("servicetype");	
+			      String status = item.getString("status");
+		    	  if (servicetype.equals("E") && status.equals("R"))
+		    	  {
+		    			if (dal.UpdateSendStatus(item, true))
+		    			{
+		    				  item.put("service_param", myrow.toString());
+		    			      R2SendThread T1 = new R2SendThread( item, mysemaphore);
+		    				  Thread t = new Thread (T1, "SendThread");					  
+		    			      t.start();
+		    			}
+		    			else
+		    				System.out.println("OY2");	  
+		    	  }
+		      
+		      }
+		      if (testservice.equals(rootid))
+		      {
+		    	  testservice = "";
+		      }
+		      else
+		      {
+		    	  testservice = testparent;
+		    	  row = dal.GetServiceRow(testservice);
+		    	  testparent = row.getString("parent_service");
+		      }
+		
+		}
+  
     }
 
     public void init(ServletConfig config) throws ServletException {
@@ -54,7 +106,7 @@ public class R2s extends HttpServlet {
     	cluster2.close();	// not sure this does anything
    }
     
-	protected void sendEvent(String rootid, String serviceid, boolean consensus, R2_DAL dal) throws IOException {
+	protected  void sendEvent(String rootid, String serviceid, boolean consensus, R2_DAL dal) throws IOException {
 		
   	  JSONObject row = dal.GetServiceRow(serviceid);
 
@@ -242,7 +294,7 @@ public class R2s extends HttpServlet {
 				      String status = all2.get(i).getString("status");	
 				      String servicetype = all2.get(i).getString("servicetype");
 				      String service = all2.get(i).getString("service");
-				      if (!status.equals("F") && !service.equals(rootid) && !servicetype.equals("F"))	// got a status that is not finished
+				      if (!status.equals("F") && !service.equals(rootid) && !servicetype.equals("E") && !servicetype.equals("F"))	// got a status that is not finished
 				    	  notfinished = 1;
 			      }
 		      }
@@ -457,7 +509,7 @@ public class R2s extends HttpServlet {
 			      //System.out.println("Pre");
 			      strep = DoPre(jsonrtoos, dal);				  
 			  }
-			  else if (sttype.equals("I") || sttype.equals("C") || sttype.equals("S") || sttype.equals("F"))
+			  else if (sttype.equals("I") || sttype.equals("C") || sttype.equals("S") || sttype.equals("F")|| sttype.equals("E"))
 			  {
 			      //System.out.println("New");
 			      strep = DoNew(jsonrtoos, dal);				  

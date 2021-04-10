@@ -366,6 +366,36 @@ public class R2_Lib {
 	}	
 	
 	
+	// //////////////////////////////////////////////////////
+	//
+	// R2_Error
+	// with passed in serviceid
+	//
+    // //////////////////////////////////////////////////////
+	public String R2_Error(String serviceid, String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "E", tries, timeout, timeoutwait);
+	}	
+
+	// without passed in serviceid
+	public String R2_Error(String serviceurl, String serviceparam, int tries, int timeout, int timeoutwait) throws IOException
+	{
+		String serviceid = R2_GetID();
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "E", tries, timeout, timeoutwait);
+	}	
+	public String R2_Error(String serviceid, String serviceurl, String serviceparam) throws IOException
+	{
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "E");
+	}	
+
+	// without passed in serviceid
+	public String R2_Error(String serviceurl, String serviceparam) throws IOException
+	{
+		String serviceid = R2_GetID();
+		return R2_FlowService(serviceid, serviceurl, serviceparam, "E");
+	}	
+	
+	
     // //////////////////////////////////////////////////////
 	//
 	// R2_Setpredecessor

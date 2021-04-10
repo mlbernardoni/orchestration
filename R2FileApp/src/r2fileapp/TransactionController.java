@@ -126,7 +126,7 @@ public class TransactionController extends HttpServlet {
 				      //
 				      // create the authenticate service
 				      //
-				      r2lib.R2_Contained(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");
+				      r2lib.R2_Contained(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction", 3, 6000, 6000);
 			      }    
 			  }
 			  else if (Clearing.equals("Individual") )
