@@ -20,7 +20,7 @@ import java.io.File;
 /**
  * Servlet implementation class R2FileAPI
  */
-@WebServlet("/R2FileAPI")
+@WebServlet("/FileAPI_ms")
 public class FileAPI_ms extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        

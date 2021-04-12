@@ -21,7 +21,7 @@ import com.datastax.driver.core.Session;
 /**
  * Servlet implementation class FileImport
  */
-@WebServlet("/FileImport")
+@WebServlet("/BatchController")
 public class BatchController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        

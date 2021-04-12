@@ -22,7 +22,7 @@ import com.datastax.driver.core.Session;
 /**
  * Servlet implementation class FileImport
  */
-@WebServlet("/FileImport")
+@WebServlet("/BatchController_ms")
 public class BatchController_ms extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        

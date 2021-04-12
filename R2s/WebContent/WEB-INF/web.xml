@@ -9,11 +9,11 @@
     <welcome-file>default.htm</welcome-file>
     <welcome-file>default.jsp</welcome-file>
   </welcome-file-list>
+    <description>R2s</description>
   <servlet>
-    <description> </description>
     <servlet-name>R2s</servlet-name>
     <servlet-class>R2s.R2s</servlet-class>
-  </servlet>
+  </servlet> 
   <servlet-mapping>
     <servlet-name>R2s</servlet-name>
     <url-pattern>/R2s.html</url-pattern>

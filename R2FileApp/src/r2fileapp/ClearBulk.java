@@ -20,7 +20,7 @@ import com.datastax.driver.core.Session;
 /**
  * Servlet implementation class TestServlet
  */
-@WebServlet("/TestServlet")
+@WebServlet("/ClearBulk")
 public class ClearBulk extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        

@@ -25,7 +25,7 @@ import java.util.ArrayList;
 /**
  * Servlet implementation class TestServlet
  */
-@WebServlet("/TestServlet")
+@WebServlet("/R2s")
 public class R2s extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	public static Cluster cluster2;

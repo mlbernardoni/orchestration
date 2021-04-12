@@ -15,7 +15,7 @@ import org.json.JSONException;
 /**
  * Servlet implementation class FileImport
  */
-@WebServlet("/FileImport")
+@WebServlet("/Finally")
 public class Finally extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        

@@ -21,7 +21,7 @@ import com.datastax.driver.core.Session;
 /**
  * Servlet implementation class TestServlet
  */
-@WebServlet("/TestServlet")
+@WebServlet("/EvaluateBatch_ms")
 public class EvaluateBatch_ms extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        

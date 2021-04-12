@@ -19,7 +19,7 @@ import com.datastax.driver.core.Session;
 /**
  * Servlet implementation class TestServlet
  */
-@WebServlet("/TestServlet")
+@WebServlet("/AuthTransaction_ms")
 public class AuthTransaction_ms extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        

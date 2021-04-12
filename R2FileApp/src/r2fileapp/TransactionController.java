@@ -22,7 +22,7 @@ import com.datastax.driver.core.Session;
 /**
  * Servlet implementation class FileImport
  */
-@WebServlet("/FileImport")
+@WebServlet("/TransactionController")
 public class TransactionController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
