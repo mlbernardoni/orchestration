@@ -2,6 +2,7 @@ package r2fileapp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import javax.servlet.ServletException;
@@ -12,6 +13,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.File;
@@ -74,21 +79,20 @@ public class FileAPI_ms extends HttpServlet {
 			  String FileName = jsonObject.getString("FileName");
 			  
 			  // data coming in in filename
-			  // put to file (Temp Directory)
-			  // future, this will be to S3
-			  // $$$$$$$$$$$$
-		      File file = File.createTempFile(rootid, ".tmp");
-		        
-		         BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-		         bw.write(FileName);
-		 
-		         bw.close();
+			  // put to file (in cassandra)
+				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+				  Session session = cluster.connect();
+				  session.execute("USE testapp");
+				  
+				  session.execute("INSERT INTO files (file_id, file) VALUES (?, ?);", 
+							UUID.fromString(rootid), FileName);
+				  
+				  session.close();
+			      cluster.close();
+
 
 		      
-		      System.out.println(file.getAbsolutePath());
-			    
-			    jsonObject.remove("FileName");
-			    jsonObject.put("FileName", file.getAbsolutePath());
+			  jsonObject.remove("FileName");
 			    jsonObject.put("rootid", rootid);
 			  // get the value
 			  //  CountDownLatch countDownLatch = new CountDownLatch(1);

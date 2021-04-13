@@ -3,6 +3,7 @@ package r2fileapp;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 import javax.servlet.ServletException;
@@ -15,6 +16,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
 //import r2fileapp.RtoosLib;
@@ -80,7 +83,6 @@ public class FileImportController extends HttpServlet {
 			  String rootid = r2lib.R2_GetRootID(); 
 			  serviceparam = r2lib.R2_GetParam();
 			  
-			  String FileName = jsonInput.getString("FileName");			
 			  String Authenticate = jsonInput.getString("Authenticate");	// Batch or Transaction
 			  //String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
 			
@@ -100,21 +102,24 @@ public class FileImportController extends HttpServlet {
 			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
 			  Session session = cluster.connect();
 			  session.execute("USE testapp");
-			  
-			  BufferedReader csvReader = new BufferedReader(new FileReader(FileName));
-			  String row;
-			  while ((row = csvReader.readLine()) != null) 
-			  {
-				  //
-				  // register as "contained
-				  // and store in DB
-				  //
-				  String[] data = row.split(",");
+
+			  String stquery = "SELECT *  FROM files WHERE ";
+		      stquery += "file_id = ";
+		      stquery += rootid;
+		      ResultSet resultSet = session.execute(stquery);
+
+		      List<Row> all = resultSet.all();
+		      String file = all.get(0).getString("file");
+		      String lines[] = file.split("\\r?\\n");
+		      for (int i = 0; i < lines.length; i++)
+		      {
+				  String[] data = lines[i].split(",");
 				  String transactionid = r2lib.R2_GetID();
 				  session.execute("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
 							UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");
-			  }
-			  csvReader.close();
+		    	  
+		      }
+		      
 			  session.close();
 		      cluster.close();
 
