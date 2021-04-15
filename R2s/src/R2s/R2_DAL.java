@@ -1,5 +1,7 @@
 package R2s;
+import java.sql.Timestamp;
 import java.util.*;
+import java.time.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,12 +14,12 @@ import com.datastax.driver.core.Session;
 //import com.datastax.driver.core.Cluster;  
 
 public class R2_DAL {
-	private Map<String, JSONObject> id_to_row;
-	private Map<String, ArrayList<String>> id_to_children;
+	private LinkedHashMap<String, JSONObject> id_to_row;
+	private LinkedHashMap<String, ArrayList<String>> id_to_children;
 
-	private HashMap<String, ArrayList<String>> pre_service_list;
-	private HashMap<String, ArrayList<String>> blocked_service_list;
-	private Map<String, JSONObject> blocked_list;
+	private LinkedHashMap<String, ArrayList<String>> pre_service_list;
+	private LinkedHashMap<String, ArrayList<String>> blocked_service_list;
+	private LinkedHashMap<String, JSONObject> blocked_list;
 	
 	private String rootid;
 	
@@ -27,12 +29,12 @@ public class R2_DAL {
 	R2_DAL(Cluster cluster2)
 	{
 		cluster = cluster2;
-		id_to_row = new HashMap<String, JSONObject>();
-		id_to_children = new HashMap<String, ArrayList<String>>();
+		id_to_row = new LinkedHashMap<String, JSONObject>();
+		id_to_children = new LinkedHashMap<String, ArrayList<String>>();
 
-		blocked_service_list = new HashMap<String, ArrayList<String>>();
-		pre_service_list = new HashMap<String, ArrayList<String>>();
-		blocked_list = new HashMap<String, JSONObject>();
+		blocked_service_list = new LinkedHashMap<String, ArrayList<String>>();
+		pre_service_list = new LinkedHashMap<String, ArrayList<String>>();
+		blocked_list = new LinkedHashMap<String, JSONObject>();
 
 		session2 = cluster.connect();
 		session2.execute("USE rtoos");
@@ -148,6 +150,43 @@ public class R2_DAL {
 		return temparray;
 	}
 	
+	public String RetrieveSearchList(JSONObject jsonObject) 
+	{
+
+		long starttime =  jsonObject.getBigInteger("starttime").longValue();	  
+		long endtime = jsonObject.getBigInteger("endtime").longValue();	  	
+		Timestamp starttimel = new Timestamp(starttime);		  
+		Timestamp endtimel = new Timestamp(endtime);		  
+	    //System.out.println(starttimel);
+	    //System.out.println(endtimel);
+
+		JSONArray newchildarray = new JSONArray();
+		String stquery = "select distinct root_service from rtoos.service_tree";
+		ResultSet resultSet = session2.execute(stquery);
+		List<Row> all = resultSet.all();
+	    for (int i = 0; i < all.size(); i++)
+	    {
+	    	String jsonstr = all.get(i).getUUID("root_service").toString();
+			String stquery2 = "select JSON * from rtoos.service_tree where root_service = " + jsonstr + " and service = " + jsonstr;
+			ResultSet resultSet2 = session2.execute(stquery2);
+			List<Row> all2 = resultSet2.all();
+	    	String jsonstr2 = all2.get(0).getString("[json]");
+		    //System.out.println(jsonstr2);
+			JSONObject jsonrow =  new JSONObject(jsonstr2);
+	    	String jsondate = jsonrow.getString("create_date");
+	    	jsondate = jsondate.replace(' ', 'T');
+		    //System.out.println(jsondate);
+		    Instant instant = Instant.parse ( jsondate );
+	    	Timestamp createl = Timestamp.from(instant);
+		    //System.out.println(createl); 
+	    	if(createl.after(starttimel) && createl.before(endtimel))
+	    	{
+				newchildarray.put(jsonrow);	    		
+	    	}
+	    }
+		return newchildarray.toString();
+	}
+	
 	public String RetrieveJsonTree(String root)
 	{
     	JSONObject jsonnode = new JSONObject();		
@@ -187,7 +226,8 @@ public class R2_DAL {
 	    }
 	    
 	    String root = jsonobj.getString("root_service");
-	    String parent = jsonobj.getString("parent_service");
+	    String create_date = jsonobj.getString("create_date");
+		//System.out.println(create_date);	  
 	    String service = jsonobj.getString("service");
 	    
 		jsonobj.put("status", "P");
@@ -195,14 +235,15 @@ public class R2_DAL {
 	    String stquery = "UPDATE service_tree SET status  = 'P' WHERE ";
 	    stquery += "root_service = ";
 	    stquery += root;
-	    stquery += " AND parent_service = ";
-	    stquery += parent;
-	    stquery += " AND service = ";
+	    stquery += " AND create_date = '";
+	    stquery += create_date;
+	    stquery += "' AND service = ";
 	    stquery += service;
 	    if (consensus)
 	    	stquery += " IF status = 'R'";
 
 			
+		//System.out.println(stquery);	  
 		ResultSet resultSet3 = session2.execute(stquery);
 		return resultSet3.wasApplied();
 		

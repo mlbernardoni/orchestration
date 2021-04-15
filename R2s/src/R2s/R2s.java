@@ -41,8 +41,23 @@ public class R2s extends HttpServlet {
     public R2s() {
         super();
     }
-    
-    public static void OnError(JSONObject myrow, String errorstring) {
+
+    // called by watchdog when Final or Error sends succeed
+    // as these are not R2s endpoints, they will not call complete
+    public static void MarkComplete(JSONObject myrow) {
+ 	    String rootid = myrow.getString("root_service");
+  	    String eventid = myrow.getString("service");
+  	    R2_DAL dal = new R2_DAL(cluster2);
+	    dal.RetrieveServiceTree(rootid);
+  	    JSONObject row = dal.GetServiceRow(eventid);    
+		row.put("status", "F");
+		dal.UpdateServiceRow(row);		  	      
+	    dal.CleanUp(); 
+    }
+
+    // called by watchdog when an error is detected
+    // marks the service as error and checks for an onerror function
+   public static void OnError(JSONObject myrow, String errorstring) {
     	String err = "R2s Error: " + errorstring;
 		System.out.println(err);    	
   	    R2_DAL dal = new R2_DAL(cluster2);
@@ -76,7 +91,7 @@ public class R2s extends HttpServlet {
 		    			      t.start();
 		    			}
 		    			else
-		    				System.out.println("OY2");	  
+		    				System.out.println(errorstring);	  
 		    	  }
 		      
 		      }
@@ -93,6 +108,7 @@ public class R2s extends HttpServlet {
 		
 		}
   
+		dal.CleanUp(); 
     }
 
     public void init(ServletConfig config) throws ServletException {
@@ -169,6 +185,7 @@ public class R2s extends HttpServlet {
 		  
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());		  
 		newobj.put("create_date", timestamp.toString());
+		//System.out.println(timestamp.toString());	  
 
 		dal.UpdateServiceRow(newobj);
 
@@ -195,6 +212,7 @@ public class R2s extends HttpServlet {
 
 		  JSONObject row = dal.GetServiceRow(eventid);		  
 		  row.put("servicetype", "S");
+		  row.put("parent_service", preid);
 		  dal.UpdateServiceRow(row);
 
 		  return eventid.toString();
@@ -523,7 +541,17 @@ public class R2s extends HttpServlet {
 		  return strep;
 	}
 	
-	
+	protected String DoRetry( JSONObject jsonObject, R2_DAL dal) throws IOException {
+		String rootid = jsonObject.getString("root_service");
+		String service = jsonObject.getString("service");
+  	    JSONObject row = dal.GetServiceRow(service);    
+		String status = row.getString("status");
+		if (!status.equals("E")) return "ERROR";	// we only retry errors
+		row.put("status", "R");
+		dal.UpdateServiceRow(row);		  	      
+		sendEvent( rootid, service, false, dal);			// no need for consensus if I am the only one
+		return service;
+	}	
   /**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -589,15 +617,23 @@ public class R2s extends HttpServlet {
 			  JSONObject jsonObject =  new JSONObject(jb.toString());
 		      String r2type = jsonObject.getString("type");	
 	    	  R2_DAL dal = new R2_DAL(cluster2);
-		      if (r2type.equals("clean")) {
+		      if (r2type.equals("clean")) {	// doesn't need dal.RetrieveServiceTree(rootid); so here up front
 		    	  strep = dal.DoClean();
+		      }
+		      else if (r2type.equals("searchlist")) {	// doesn't need dal.RetrieveServiceTree(rootid); so here up front
+			      //System.out.println("searchlist");
+		    	  strep = dal.RetrieveSearchList(jsonObject);
 		      }
 		      else
 		      {
-				  String rootid = jsonObject.getString("root_service");
+				  String rootid = jsonObject.getString("root_service");	// everything after this point needs dal.RetrieveServiceTree(rootid);
 		    	  dal.RetrieveServiceTree(rootid);
 			      if (r2type.equals("jsontree")) {
+				      //System.out.println("jsontree");
 			    	  strep = dal.RetrieveJsonTree(rootid);
+			      }
+			      else if (r2type.equals("retry")) {
+				      DoRetry(jsonObject, dal);
 			      }
 			      else if (r2type.equals("Complete")) {
 			    	  

@@ -30,6 +30,12 @@ public class R2sWatchDog implements Runnable
 					  R2s.OnError(myrow, T1.errorstring);
 			    	  
 			      }
+			      else {
+			    	  // good send, mark complete if onerror or onfinal
+			    	  String servicetype = myrow.getString("servicetype");
+			    	  if (servicetype.equals("F") || servicetype.equals("E"))
+						  R2s.MarkComplete(myrow);
+			      }
 			      
 			  }
 			  catch (Exception e) { 
