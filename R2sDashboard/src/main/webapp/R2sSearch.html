@@ -9,8 +9,7 @@
   <header>
     <h1>R2s Search</h1>
   </header>
-  <form>
-
+	 <form>
     <fieldset>
 		<label for="startdate">Start date:</label>		
 		<input type="date" id="startdate" name="startdate">
@@ -92,7 +91,7 @@
  		let ul = document.getElementById('ct1');
 		 for (let i = 0; i < mylist.length; i++){
 			const row = mylist[i];
-			let jsontext = "<b>Time:</b> " + row["create_date"].toString()+ " <b>URL:</b> " + row["service_url"].toString() + " <b>Param:</b> " + row["service_param"].toString() ;
+			let jsontext = "<b>Time:</b>&nbsp" + row["create_date"].toString() + "&nbsp&nbsp&nbsp<b>Root Service:</b>&nbsp" + row["service"].toString() + "&nbsp&nbsp&nbsp<b>URL:</b>&nbsp" + row["service_url"].toString() + "&nbsp&nbsp&nbsp<b>Param:</b>&nbsp" + row["service_param"].toString() ;
 		    jsontext = jsontext.replaceAll('"', '');
 		    let li = document.createElement('li');
 			li.setAttribute('data-value', row["root_service"].toString());
@@ -149,6 +148,7 @@ function applyTo(node, doNotRecurse){
      li.style.WebkitUserSelect = 'none';
 
      li.addEventListener('click', handleClick.bind(null, li));
+     li.addEventListener('dblclick', handledblClick.bind(null, li));
 
      toggle(li);
 
@@ -156,6 +156,10 @@ function applyTo(node, doNotRecurse){
 
  });
 
+}
+function handledblClick(node, e){
+	handleClick(node, e);
+	onDisplay();
 }
 
 // Handles a click. The parameter is:
@@ -181,7 +185,7 @@ function handleClick(node, e){
  	{
  	    let jsondatastr = li.getAttribute('data-value');	// data-value has the record
 	    jsondatastr = jsondatastr.replaceAll('"', '');
- 	    document.getElementById("p1").innerHTML = jsondatastr;
+ 	    document.getElementById("p1").innerHTML = "Selected Service: " + jsondatastr;
  	    rootid = jsondatastr
  	    
  	    	document.getElementById("display-button").disabled = false;

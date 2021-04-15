@@ -22,9 +22,8 @@ h3{
  background-color: #80bfff;
 }
 form{
- width: 45%;
+ width: 100%;
  display: inline-block;
- margin: 20px;
 }
 footer{
  margin-top: 3%;
@@ -45,3 +44,4 @@ li.treeClosed{
   list-style-image : url('button-closed.png');
   cursor           : pointer;
 }
+

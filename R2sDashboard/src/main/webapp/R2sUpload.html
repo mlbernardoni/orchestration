@@ -9,29 +9,25 @@
   <header>
     <h1>R2s File Upload</h1>
   </header>
+     <h3>Select Parameters</h3>
   <form>
-     <input type ="hidden" value = "TBD" id="root" name="rootid" required>
-    <fieldset>
-      <h3>Select Parameters</h3>
-	  <label for="authdropdown">Authentication</label>
+ 	  <label for="authdropdown">Authentication</label>
 	  <select class="authdropdown" data-style="btn-info" name="authdropdown" id="authdropdown">
 		        <option value="Transaction">Transaction</option>
 		        <option value="Batch">Batch</option>
 		</select>    
-      <br><br>
 	  <label for="cleardropdown">Clearing</label>
 	  <select class="cleardropdown" data-style="btn-info" name="cleardropdown" id="cleardropdown">
 		        <option value="Individual">Individual</option>
 		        <option value="IndividualA">IndividualA</option>
 		        <option value="Bulk">Bulk</option>
-		</select>    
-      <br><br>
+		</select>  
+		<br><br>	  
        <input id="fileupload" type="file" name="fileupload" />
       <br><br>
       <button id="reset" type ="reset">Reset</button>
-    </fieldset>
   </form>
-  <br>
+  <br><br>
  <button id="upload-button" onclick="uploadFile()"> Upload </button>
  <button id="upload-button_ms" onclick="uploadFile_ms()"> Upload ms</button>
  <p id="p1">Select Parameters</p>

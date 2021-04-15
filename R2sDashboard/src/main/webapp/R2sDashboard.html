@@ -12,15 +12,19 @@
  <h2>Service Tree</h2>
  <h3>Select a Service</h3>
  
+ <form onsubmit="onnewroot(); return false;">
+	<input id="newroot" pattern=".{36,36}" size="36" required>
+    <input type="submit" value="Refresh">
+</form>
+
  
  <ul id="ct1" class="tree">
  </ul>
   
   <br>
-	<button id="refresh" onclick="onrefresh()"> Refresh </button>
-	<button id="retry" onclick="onretry()"> Retry </button>
+	<button id="retry" onclick="onretry()"> Retry errored service </button>
   <br>
-<p id="p1">Select a service</p>
+<p id="p1"></p>
 
   <script type="text/javascript">
 
@@ -43,7 +47,7 @@
   
  async  function tryit(){ 
 		 
-		document.getElementById("p1").innerHTML = "Select a service";
+		document.getElementById("p1").innerHTML = "";
 		var jsonData = {};
 		  jsonData["root_service"] = rootid;
 		  jsonData["type"] = "jsontree";
@@ -60,9 +64,14 @@
 			//document.getElementById("p1").innerHTML = jsontree;
 			
 	 		let ul = document.getElementById('ct1');
-	 		addsubtree(ul, jsontree);
-		
-	    	CollapsibleTree.apply();
+	 		console.log(jsontree);
+	 		if("record" in jsontree) {
+		 		addsubtree(ul, jsontree);
+				
+		    	CollapsibleTree.apply();
+		    	document.getElementById("newroot").value = rootid;	 			
+	 		}
+	 		else document.getElementById("newroot").value = "";
 
 		};
 
@@ -87,27 +96,22 @@ async function onretry() {
 	    let jsontree = await response.text();
 	    onrefresh();
 }
-			
-function onrefresh() {
 
-	//const queryString = window.location.search;
- 	//const urlParams = new URLSearchParams(queryString);
-
-	//document.getElementById("ct1").innerHTML = "oy"";
+function onnewroot() {
+	rootid =  document.getElementById("newroot").value;
    	document.getElementById("retry").disabled = true;
  	
- 	if (!rootid == "") 
- 	{
-		document.getElementById("ct1").innerHTML = "";
+ 	document.getElementById("ct1").innerHTML = "";
+	tryit();
 
-		  tryit ();
- 	}
+
 }
+			
 
 		
 function addsubtree( ele,  row){
-		console.log(row["children"].length);
-		console.log(JSON.stringify(row));
+		//console.log(row["children"].length);
+		//console.log(JSON.stringify(row));
 	    let jsontext = row["children"].length + " <b>Status:</b> " + JSON.stringify(row["record"]["status"]) + "  <b>Type:</b> " + JSON.stringify(row["record"]["servicetype"]) + "  <b>URL:</b> " + JSON.stringify(row["record"]["service_url"]);
 	    let jsondata = JSON.stringify(row["record"]); // put the record as a string into data-value
 	    jsontext = jsontext.replaceAll('"', '');
@@ -164,6 +168,7 @@ const CollapsibleTree = (function(){
   // node         - the tree element
   // doNotRecurse - true if sub-trees should not be made collapsible
   function applyTo(node, doNotRecurse){
+	  let firsttime = 0;
 
     [].forEach.call(node.getElementsByTagName('li'), li => {
 
@@ -177,6 +182,10 @@ const CollapsibleTree = (function(){
         li.addEventListener('click', handleClick.bind(null, li));
 
         toggle(li);
+        if (firsttime == 0) {
+        	firsttime = 1;
+            toggle(li);
+       }
 
       }
 
@@ -211,7 +220,7 @@ const CollapsibleTree = (function(){
     	    let jsonstatusstr = JSON.stringify(jsondata["status"]);
     	    
    	    	jsondatastr = jsondatastr.replaceAll('"', '');
-    	    document.getElementById("p1").innerHTML = jsondatastr;
+    	    document.getElementById("p1").innerHTML = "Selected Service: " + jsondatastr;
     	    
     	    jsonstatusstr = jsonstatusstr.replaceAll('"', '');
 	   	    if (jsonstatusstr == "E")
@@ -236,7 +245,7 @@ const CollapsibleTree = (function(){
 
     const open = node.classList.contains('treeClosed');
     const uls  = node.getElementsByTagName('ul');
-   console.log(node);
+    //console.log(node);
 
     [].forEach.call(uls, ul => {
 
