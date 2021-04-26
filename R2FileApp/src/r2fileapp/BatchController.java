@@ -17,6 +17,8 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
+import R2sLib.*;
+
 
 /**
  * Servlet implementation class FileImport
@@ -72,20 +74,20 @@ public class BatchController extends HttpServlet {
 		      System.out.println("BatchController Starting: ");
 
 		      // ours is coming in as a string buffer
-			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  R2sLib r2lib = new R2sLib(jb.toString());
 			  
 			  // get parameter from the message and make it a json object
 		      //JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
 			  
 			  //System.out.println(jb.toString());
-			  String fileid = r2lib.R2_GetRootID(); 
-			  serviceparam = r2lib.R2_GetParam();
+			  String fileid = r2lib.R2s_GetRootID(); 
+			  serviceparam = r2lib.R2s_GetParam();
 			  
 			  //
 			  // create the EvaluateBatch service
 			  // as subsequent
 			  //
-			 r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/EvaluateBatch.html", serviceparam);
+			 r2lib.R2s_Subsequent("http://localhost:8080/R2FileApp/EvaluateBatch.html", serviceparam);
 			  
 			  //
 			  // first things first, setup connection to DB
@@ -112,7 +114,7 @@ public class BatchController extends HttpServlet {
 			      // create the authenticate service
 			      // as contained
 			      //
-			      r2lib.R2_Contained(transactionid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");
+			      r2lib.R2s_Contained(transactionid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");
 				  
 		      }    
 		      session.close();
@@ -124,10 +126,10 @@ public class BatchController extends HttpServlet {
 		   	
 			  // Release the registered services
 		      //System.out.println("BatchController prerelease: ");
-			  r2lib.R2_Release();
+			  r2lib.R2s_Release();
 		      //System.out.println("BatchController postrelease: ");
 			  // Complete triggers the release of all "successor" services			  
-			  r2lib.R2_Complete();
+			  r2lib.R2s_Complete();
 			  
 		      System.out.println("BatchController Ending: ");
 			  

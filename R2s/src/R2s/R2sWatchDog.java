@@ -1,5 +1,6 @@
 package R2s;
 
+import java.io.IOException;
 import java.util.concurrent.Semaphore;
 
 import org.json.JSONObject;
@@ -39,7 +40,12 @@ public class R2sWatchDog implements Runnable
 			      
 			  }
 			  catch (Exception e) { 
-				  R2s.OnError(myrow, e.toString());
+				  try {
+					R2s.OnError(myrow, e.toString());
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			  }   	  
 	   }
 

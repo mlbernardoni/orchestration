@@ -90,6 +90,15 @@
     <servlet-name>Finally</servlet-name>
     <url-pattern>/Finally.html</url-pattern>
   </servlet-mapping>
+   <servlet>
+    <description> </description>
+    <servlet-name>OnError</servlet-name>
+    <servlet-class>r2fileapp.OnError</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>OnError</servlet-name>
+    <url-pattern>/OnError.html</url-pattern>
+  </servlet-mapping>
   <servlet>
     <description> </description>
     <servlet-name>FileAPI_ms</servlet-name>

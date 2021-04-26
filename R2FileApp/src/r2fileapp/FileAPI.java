@@ -16,11 +16,8 @@ import org.json.JSONObject;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.File;
-//import r2fileapp.RtoosLib;
-import java.io.FileReader;
+
+import R2sLib.*;
 
 /**
  * Servlet implementation class R2FileAPI
@@ -73,8 +70,8 @@ public class FileAPI extends HttpServlet {
 			  // if it comes in as HTML
 			  // ours is coming in as a string buffer
 			  JSONObject jsonObject =  new JSONObject(jb.toString());
-			  R2_Lib r2lib = new R2_Lib();
-			  String rootid = r2lib.R2_GetID();
+			  R2sLib r2lib = new R2sLib();
+			  String rootid = r2lib.R2s_GetID();
 			  String FileName = jsonObject.getString("FileName");
 			  
 			  // data coming in in filename
@@ -91,7 +88,7 @@ public class FileAPI extends HttpServlet {
 
 			  jsonObject.remove("FileName");
 			  // get the value
-			  resp = r2lib.R2_Root(rootid, "http://localhost:8080/R2FileApp/FileImportController.html", jsonObject.toString() );
+			  resp = r2lib.R2s_Root(rootid, "http://localhost:8080/R2FileApp/FileImportController.html", jsonObject.toString() );
 			  
 		  } 
 		  catch (JSONException e) 

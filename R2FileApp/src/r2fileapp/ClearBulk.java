@@ -17,6 +17,8 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
+import R2sLib.*;
+
 /**
  * Servlet implementation class TestServlet
  */
@@ -91,9 +93,9 @@ public class ClearBulk extends HttpServlet {
 		      
 			  // if it comes in as HTML
 			  // ours is coming in as a string buffer
-			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  R2sLib r2lib = new R2sLib(jb.toString());
 			  
-			  String fileid = r2lib.R2_GetRootID();
+			  String fileid = r2lib.R2s_GetRootID();
 
 			  // first things first, store the transactions in DB
 			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
@@ -121,7 +123,7 @@ public class ClearBulk extends HttpServlet {
 		      cluster.close();
 		    
 			  // Complete triggers the release of all "successor" services			  
-		      r2lib.R2_Complete();
+		      r2lib.R2s_Complete();
 			  
 		      System.out.println("ClearBulk Ending: ");
 			  

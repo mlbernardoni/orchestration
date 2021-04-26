@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
 
+import R2sLib.*;
 
 /**
  * Servlet implementation class FileImport
@@ -61,13 +62,13 @@ public class Finally extends HttpServlet {
 		  try 
 		  {
 			  // ours is coming in as a string buffer
-			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  R2sLib r2lib = new R2sLib(jb.toString());
 			  
-			  
-		      System.out.println("FileImport Chain ERRORED!!!! ");
-		      System.out.println(r2lib.R2_GetParam());
+			  String callback = request.getParameterValues("callback")[0];			  
+		      System.out.println("FileImport Chain Finished!!!! " + callback);
+//		      System.out.println(r2lib.R2_GetParam());
 		      
-		      r2lib.R2_Complete();
+		      r2lib.R2s_Complete();
 		  }
 		  catch (JSONException  e) 
 		  {

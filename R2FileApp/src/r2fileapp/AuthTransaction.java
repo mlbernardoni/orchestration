@@ -16,6 +16,8 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
+import R2sLib.*;
+
 /**
  * Servlet implementation class TestServlet
  */
@@ -85,12 +87,12 @@ public class AuthTransaction extends HttpServlet {
 			  resp = jb.toString();
 			  // if it comes in as HTML
 			  // ours is coming in as a string buffer
-			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  R2sLib r2lib = new R2sLib(jb.toString());
 			  
 			  // get parameter from the message and make it a json object
 		      //JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
-			  String fileid = r2lib.R2_GetRootID();
-			  String transactionid = r2lib.R2_GetServiceID();
+			  String fileid = r2lib.R2s_GetRootID();
+			  String transactionid = r2lib.R2s_GetServiceID();
 			  
 		      
 			  // first things first, store the transactions in DB
@@ -127,7 +129,7 @@ public class AuthTransaction extends HttpServlet {
 
 		    
 			  // Complete triggers the release of all "successor" services			  
-		      r2lib.R2_Complete();
+		      r2lib.R2s_Complete();
 				  
 		  } 
 		  catch (JSONException e ) 

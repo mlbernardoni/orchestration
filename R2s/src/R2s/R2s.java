@@ -28,7 +28,7 @@ import java.util.ArrayList;
 @WebServlet("/R2s")
 public class R2s extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	public static Cluster cluster2;
+	public static Cluster r2scluster;
 	public static Semaphore mysemaphore;
 	
 	private static int R2s_TRIES  = 1;
@@ -43,11 +43,13 @@ public class R2s extends HttpServlet {
     }
 
     // called by watchdog when Final or Error sends succeed
-    // as these are not R2s endpoints, they will not call complete
-    public static void MarkComplete(JSONObject myrow) {
+    // as these may or may not R2s endpoints, they may not call complete
+    // and if they do, no big deal
+    public static void MarkComplete(JSONObject myrow) throws IOException {
  	    String rootid = myrow.getString("root_service");
   	    String eventid = myrow.getString("service");
-  	    R2_DAL dal = new R2_DAL(cluster2);
+  	    R2s_DAL dal = new R2s_DAL();
+  	    dal.Init();
 	    dal.RetrieveServiceTree(rootid);
   	    JSONObject row = dal.GetServiceRow(eventid);    
 		row.put("status", "F");
@@ -57,10 +59,11 @@ public class R2s extends HttpServlet {
 
     // called by watchdog when an error is detected
     // marks the service as error and checks for an onerror function
-   public static void OnError(JSONObject myrow, String errorstring) {
+   public static void OnError(JSONObject myrow, String errorstring) throws IOException {
     	String err = "R2s Error: " + errorstring;
 		System.out.println(err);    	
-  	    R2_DAL dal = new R2_DAL(cluster2);
+  	    R2s_DAL dal = new R2s_DAL();
+  	    dal.Init();
  	    String rootid = myrow.getString("root_service");
  	    String partentid = myrow.getString("parent_service");
  	    String eventid = myrow.getString("service");
@@ -112,17 +115,17 @@ public class R2s extends HttpServlet {
     }
 
     public void init(ServletConfig config) throws ServletException {
-   	  	cluster2 = Cluster.builder().addContactPoint("127.0.0.1").build();
+    	r2scluster = Cluster.builder().addContactPoint("127.0.0.1").build();
    	  	
    	  	mysemaphore = new Semaphore(150);	// must be > 1
     }
     
     public void destroy() {
     	
-    	cluster2.close();	// not sure this does anything
+    	r2scluster.close();	// not sure this does anything
    }
     
-	protected  void sendEvent(String rootid, String serviceid, boolean consensus, R2_DAL dal) throws IOException {
+	protected  void sendEvent(String rootid, String serviceid, boolean consensus, R2s_DAL dal) throws IOException {
 		
   	  JSONObject row = dal.GetServiceRow(serviceid);
 
@@ -150,7 +153,7 @@ public class R2s extends HttpServlet {
 	//	DoRoot
 	//
 	// /////////////////////////////////////////////
-	protected String DoRoot(JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+	protected String DoRoot(JSONObject jsonrtoos, R2s_DAL dal) throws IOException {
 
 		JSONObject newobj = new JSONObject();
 		String eventid = jsonrtoos.getString("service");
@@ -198,7 +201,7 @@ public class R2s extends HttpServlet {
 	//	DoPre
 	//
 	// /////////////////////////////////////////////
-	protected String DoPre ( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+	protected String DoPre ( JSONObject jsonrtoos, R2s_DAL dal) throws IOException {
 		  String rootid = jsonrtoos.getString("root_service");
 		  String preid = jsonrtoos.getString("pre_service");
 		  String eventid = jsonrtoos.getString("blocked_service");
@@ -224,7 +227,7 @@ public class R2s extends HttpServlet {
 	//	DoNew
 	//
 	// /////////////////////////////////////////////
-	protected String DoNew ( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+	protected String DoNew ( JSONObject jsonrtoos, R2s_DAL dal) throws IOException {
 		
 		  JSONObject newobj = new JSONObject();		
 		  String rootid = jsonrtoos.getString("root_service");
@@ -293,7 +296,7 @@ public class R2s extends HttpServlet {
 	//	DoFinal
 	//
 	// /////////////////////////////////////////////
-	protected void DoFinal ( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+	protected void DoFinal ( JSONObject jsonrtoos, R2s_DAL dal) throws IOException {
  	  	  String rootid = jsonrtoos.getString("root_service");
 		  String partentid = jsonrtoos.getString("parent_service");
 		  String eventid = jsonrtoos.getString("service");
@@ -369,7 +372,7 @@ public class R2s extends HttpServlet {
 	//	DoComplete
 	//
 	// /////////////////////////////////////////////
-	protected void DoComplete ( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+	protected void DoComplete ( JSONObject jsonrtoos, R2s_DAL dal) throws IOException {
 
 		  String rootid = jsonrtoos.getString("root_service");
 		  String eventid = jsonrtoos.getString("service");
@@ -514,7 +517,7 @@ public class R2s extends HttpServlet {
 	//	DoBatch 
 	//
 	// /////////////////////////////////////////////
-	protected String DoBatch( JSONObject jsonrtoos, R2_DAL dal) throws IOException {
+	protected String DoBatch( JSONObject jsonrtoos, R2s_DAL dal) throws IOException {
 		String sttype = null;
 		String strep = null;
 		  try 
@@ -541,7 +544,7 @@ public class R2s extends HttpServlet {
 		  return strep;
 	}
 	
-	protected String DoRetry( JSONObject jsonObject, R2_DAL dal) throws IOException {
+	protected String DoRetry( JSONObject jsonObject, R2s_DAL dal) throws IOException {
 		String rootid = jsonObject.getString("root_service");
 		String service = jsonObject.getString("service");
   	    JSONObject row = dal.GetServiceRow(service);    
@@ -616,7 +619,8 @@ public class R2s extends HttpServlet {
 			  // ours is coming in as a string buffer
 			  JSONObject jsonObject =  new JSONObject(jb.toString());
 		      String r2type = jsonObject.getString("type");	
-	    	  R2_DAL dal = new R2_DAL(cluster2);
+		  	  R2s_DAL dal = new R2s_DAL();
+		  	  dal.Init();
 		      if (r2type.equals("clean")) {	// doesn't need dal.RetrieveServiceTree(rootid); so here up front
 		    	  strep = dal.DoClean();
 		      }

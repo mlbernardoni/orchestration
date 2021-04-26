@@ -18,6 +18,8 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
+import R2sLib.*;
+
 /**
  * Servlet implementation class TestServlet
  */
@@ -85,13 +87,13 @@ public class EvaluateBatch extends HttpServlet {
 	
 		  try 
 		  {
-			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  R2sLib r2lib = new R2sLib(jb.toString());
 			  System.out.println("EvaluateBatch Starting: ");
 
 			  
 			  // get parameter from the message and make it a json object
-		      JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
-			  String fileid = r2lib.R2_GetRootID();
+		      JSONObject jsonInput =  new JSONObject(r2lib.R2s_GetParam());
+			  String fileid = r2lib.R2s_GetRootID();
 			  
 			  String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
 
@@ -136,7 +138,7 @@ public class EvaluateBatch extends HttpServlet {
 				  {
 					  
 					  // create the bulkclear service
-					  r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/ClearBulk.html", fileid);						
+					  r2lib.R2s_Subsequent("http://localhost:8080/R2FileApp/ClearBulk.html", fileid);						
 				  }
 			      // //////////////////////////////////////////////////////
 				  // Individual
@@ -147,18 +149,18 @@ public class EvaluateBatch extends HttpServlet {
 				      {
 				    	 // create the Individual clear service
 					      String transaction_id = all.get(ii).getUUID("transaction_id").toString();	
-					      r2lib.R2_Independent("http://localhost:8080/R2FileApp/ClearIndividual.html", transaction_id);						
+					      r2lib.R2s_Independent("http://localhost:8080/R2FileApp/ClearIndividual.html", transaction_id);						
 				      }    
 				  }
 				  
 			  }
 		      
-			  r2lib.R2_Release();
+			  r2lib.R2s_Release();
 
 		      session.close();
 		      cluster.close();
 			  // Complete triggers the release of all "successor" services			  
-			  r2lib.R2_Complete();
+			  r2lib.R2s_Complete();
 			  
 		      System.out.println("EvaluateBatch Ending: ");
 			  

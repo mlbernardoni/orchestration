@@ -1,7 +1,6 @@
 package r2fileapp;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +19,8 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
+
+import R2sLib.*;
 //import r2fileapp.RtoosLib;
 
 /**
@@ -76,12 +77,12 @@ public class FileImportController extends HttpServlet {
 		      System.out.println("FileImport Starting: ");
 			  
 			  // coming in as a string buffer
-			  R2_Lib r2lib = new R2_Lib(jb.toString());
-			  
+			  R2sLib r2lib = new R2sLib(jb.toString());
+			 
 			  // get parameter from the message and make it a json object
-		      JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
-			  String rootid = r2lib.R2_GetRootID(); 
-			  serviceparam = r2lib.R2_GetParam();
+		      JSONObject jsonInput =  new JSONObject(r2lib.R2s_GetParam());
+			  String rootid = r2lib.R2s_GetRootID(); 
+			  serviceparam = r2lib.R2s_GetParam();
 			  
 			  String Authenticate = jsonInput.getString("Authenticate");	// Batch or Transaction
 			  //String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
@@ -94,8 +95,9 @@ public class FileImportController extends HttpServlet {
 			  // but that is beyond the scope of this demo
 		      //
 		      // //////////////////////////////////////////////////////
-			  r2lib.R2_Error("http://localhost:8080/R2FileApp/Finally.html", "R2_Error");
-			  r2lib.R2_Final("http://127.0.0.1:46666/callback?id=" + rootid, "R2_Final");
+			  r2lib.R2s_Error("http://localhost:8080/R2FileApp/OnError.html?callback=" + rootid, "R2_Error");
+			  r2lib.R2s_Final("http://localhost:8080/R2FileApp/Finally.html?callback=" + rootid, "R2_Final");
+//			  r2lib.R2_Final("http://127.0.0.1:46666/callback?id=" + rootid, "R2_Final");
 			  //
 			  // first things first, setup connection to DB
 			  //
@@ -114,7 +116,7 @@ public class FileImportController extends HttpServlet {
 		      for (int i = 0; i < lines.length; i++)
 		      {
 				  String[] data = lines[i].split(",");
-				  String transactionid = r2lib.R2_GetID();
+				  String transactionid = r2lib.R2s_GetID();
 				  session.execute("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
 							UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");
 		    	  
@@ -129,20 +131,20 @@ public class FileImportController extends HttpServlet {
 				  // //////////////////////////////////////////////////////
 				  // Batch
 			      // //////////////////////////////////////////////////////
-				  r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/BatchController.html", serviceparam);
+				  r2lib.R2s_Subsequent("http://localhost:8080/R2FileApp/BatchController.html", serviceparam);
 			  }
 			  else if (Authenticate.equals("Transaction") )
 			  {
 			      // //////////////////////////////////////////////////////
 				  // Transaction
 			      // //////////////////////////////////////////////////////
-				  r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/TransactionController.html", serviceparam);
+				  r2lib.R2s_Subsequent("http://localhost:8080/R2FileApp/TransactionController.html", serviceparam);
 			  }
 			  
 		   	
 			  // Complete triggers the release of all "successor" services			  
-			  r2lib.R2_Release();
-			  r2lib.R2_Complete();
+			  r2lib.R2s_Release();
+			  r2lib.R2s_Complete();
 			  
 		      System.out.println("FileImport Ending: ");
 			  response.getWriter().append(resp);

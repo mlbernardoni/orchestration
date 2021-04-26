@@ -18,6 +18,8 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
+import R2sLib.*;
+
 
 /**
  * Servlet implementation class FileImport
@@ -68,12 +70,12 @@ public class TransactionController extends HttpServlet {
 		  try 
 		  {
 			  // coming in as a string buffer
-			  R2_Lib r2lib = new R2_Lib(jb.toString());
+			  R2sLib r2lib = new R2sLib(jb.toString());
 			  
 			  // get parameter from the message and make it a json object
-		      JSONObject jsonInput =  new JSONObject(r2lib.R2_GetParam());
+		      JSONObject jsonInput =  new JSONObject(r2lib.R2s_GetParam());
 			  
-			  String fileid = r2lib.R2_GetRootID(); 
+			  String fileid = r2lib.R2s_GetRootID(); 
 			  
 			  //String Authenticate = jsonInput.getString("Authenticate");	// Batch or Transaction
 			  String Clearing = jsonInput.getString("Clearing");			// Bulk or Individual
@@ -105,7 +107,7 @@ public class TransactionController extends HttpServlet {
 				  
 				  //
 				  // create the bulkclear service
-				  r2lib.R2_Subsequent("http://localhost:8080/R2FileApp/ClearBulk.html", "Clear Bulk");
+				  r2lib.R2s_Subsequent("http://localhost:8080/R2FileApp/ClearBulk.html", "Clear Bulk");
 			      //System.out.println(BulkClear);
 				  					  
 				  //
@@ -126,7 +128,7 @@ public class TransactionController extends HttpServlet {
 				      //
 				      // create the authenticate service
 				      //
-				      r2lib.R2_Contained(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction", 3, 6000, 6000);
+				      r2lib.R2s_Contained(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction", 3, 6000, 6000);
 			      }    
 			  }
 			  else if (Clearing.equals("Individual") )
@@ -152,11 +154,11 @@ public class TransactionController extends HttpServlet {
 				      
 				      //
 				      // create the authenticate service
-				      String transactionid = r2lib.R2_Subsequent(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");					  
+				      String transactionid = r2lib.R2s_Subsequent(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");					  
 				      // create the clear individual service
-				      String clearid = r2lib.R2_Independent("http://localhost:8080/R2FileApp/ClearIndividual.html", serviceid);
+				      String clearid = r2lib.R2s_Independent("http://localhost:8080/R2FileApp/ClearIndividual.html", serviceid);
 				      // set transaction as predecessor to clear
-				      r2lib.R2_Setpredecessor(transactionid, clearid);
+				      r2lib.R2s_Setpredecessor(transactionid, clearid);
 			      }    
 			  }
 			  
@@ -164,10 +166,10 @@ public class TransactionController extends HttpServlet {
 		   	
 			  // Release the registered services
 		      //System.out.println("OY2");
-			  r2lib.R2_Release();
+			  r2lib.R2s_Release();
 		      //System.out.println("OY3");
 			  // Complete triggers the release of all "successor" services			  
-			  r2lib.R2_Complete();
+			  r2lib.R2s_Complete();
 			  
 		      System.out.println("TransactionController Ending: ");
 			  
