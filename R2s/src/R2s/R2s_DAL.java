@@ -1,5 +1,7 @@
 package R2s;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +19,8 @@ import com.datastax.driver.core.Session;
 //import com.datastax.driver.core.Cluster;  
 
 public class R2s_DAL {
+	public static Cluster r2scluster;
+	private static String CASSANDRA_URL = "127.0.0.1";
 	private LinkedHashMap<String, JSONObject> id_to_row;
 	private LinkedHashMap<String, ArrayList<String>> id_to_children;
 
@@ -27,6 +31,36 @@ public class R2s_DAL {
 	private String rootid;
 	
 	private Session session2;
+
+	
+	static public void create() {
+		try {
+			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();           
+			InputStream stream = classLoader.getResourceAsStream("../R2sConfiguration.json");
+			if (stream == null) {
+			    System.out.println("R2sConfiguration.json missing from WEB-INF folder");
+			    // might as well try with default
+				r2scluster = Cluster.builder().addContactPoint(CASSANDRA_URL).build();		
+				return;
+			}
+			ByteArrayOutputStream result = new ByteArrayOutputStream();
+			byte[] buffer = new byte[1024];
+			for (int length; (length = stream.read(buffer)) != -1; ) {
+			     result.write(buffer, 0, length);
+			}
+			// StandardCharsets.UTF_8.name() > JDK 7
+			JSONObject r2sconifg =  new JSONObject(result.toString("UTF-8"));
+			CASSANDRA_URL = r2sconifg.getString("CASSANDRA_URL");
+			r2scluster = Cluster.builder().addContactPoint(CASSANDRA_URL).build();		
+		} 
+	catch (IOException e) {
+	      System.out.println(e.toString());
+		}
+
+	}
+	static public void destroy() {
+    	r2scluster.close();	// not sure this does anything		
+	}
 
 	public void Init() throws IOException
 	{
@@ -42,7 +76,7 @@ public class R2s_DAL {
 		{
 			try {
 				
-				session2 = R2s.r2scluster.connect();
+				session2 = r2scluster.connect();
 				session2.execute("USE rtoos");
 				return;
 			}
@@ -53,7 +87,7 @@ public class R2s_DAL {
 					  try 
 					  {
 						  TimeUnit.MILLISECONDS.sleep(5000);	// add a little wait, to see if root will end
-						  R2s.r2scluster = Cluster.builder().addContactPoint("127.0.0.1").build();	
+						  create();
 					  }
 					  catch (JSONException | InterruptedException ie) 
 					  {
@@ -246,7 +280,7 @@ public class R2s_DAL {
 		// not sure if this check will help or not, can't hurt
 	    if (!jsonobj.getString("status").equals("R"))
 	    {
-			System.out.println("OY1");	  
+			//System.out.println("OY1");	  
 	    	return false;
 	    }
 	    
