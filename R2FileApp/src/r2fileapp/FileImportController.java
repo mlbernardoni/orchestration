@@ -95,8 +95,10 @@ public class FileImportController extends HttpServlet {
 			  // but that is beyond the scope of this demo
 		      //
 		      // //////////////////////////////////////////////////////
-			  r2lib.R2s_Error("http://localhost:8080/R2FileApp/OnError.html?callback=" + rootid, "R2_Error");
-			  r2lib.R2s_Final("http://localhost:8080/R2FileApp/Finally.html?callback=" + rootid, "R2_Final");
+			  //r2lib.R2s_Error("http://localhost:8080/R2FileApp/OnError.html?callback=" + rootid, "R2_Error");
+			  //r2lib.R2s_Final("http://localhost:8080/R2FileApp/Finally.html?callback=" + rootid, "R2_Final");
+			  r2lib.R2s_Error("http://localhost:8080/R2FileApp/OnError.html" , "R2_Error");
+			  r2lib.R2s_Final("http://localhost:8080/R2FileApp/Finally.html" , "R2_Final");
 //			  r2lib.R2_Final("http://127.0.0.1:46666/callback?id=" + rootid, "R2_Final");
 			  //
 			  // first things first, setup connection to DB

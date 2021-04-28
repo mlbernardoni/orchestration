@@ -1,109 +1,107 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <meta charset="ISO-8859-1">
-    <link rel="stylesheet" href="mystyle.css">
-    <title>R2Dashboard</title>
+<meta charset="ISO-8859-1">
+<link rel = "stylesheet" href="mystyle.css">
+<title>R2Dashboard</title>
 </head>
-
 <body>
-    <header>
-        <h1>R2s File Upload</h1>
-    </header>
-    <h3>Select Parameters</h3>
-    <form>
-        <label for="authdropdown">Authentication</label>
-        <select class="authdropdown" data-style="btn-info" name="authdropdown" id="authdropdown">
-            <option value="Transaction">Transaction</option>
-            <option value="Batch">Batch</option>
-        </select>
-        <label for="cleardropdown">Clearing</label>
-        <select class="cleardropdown" data-style="btn-info" name="cleardropdown" id="cleardropdown">
-            <option value="Individual">Individual</option>
-            <option value="IndividualA">IndividualA</option>
-            <option value="Bulk">Bulk</option>
-        </select>
-        <br><br>
-        <input id="fileupload" type="file" name="fileupload" />
-        <br><br>
-        <button id="reset" type="reset">Reset</button>
-    </form>
-    <br><br>
-    <button id="upload-button" onclick="uploadFile()"> Upload </button>
-    <button id="upload-button_ms" onclick="uploadFile_ms()"> Upload ms</button>
-    <p id="p1">Select Parameters</p>
-    <script type="text/javascript">
-        function uploadFile() {
-            var file = fileupload.files[0],
-                read = new FileReader();
-            if (file == undefined) {
-                document.getElementById("p1").innerHTML = 'Select a file.';
-                return;
-            }
-            read.readAsBinaryString(file);
-            read.onloadend = async function() {
-                document.getElementById("p1").innerHTML = "Uploading File<br>Do not refresh the browser";
-                var jsonData = {};
-                jsonData["authdropdown"] = document.getElementById("authdropdown").value;
-                jsonData["cleardropdown"] = document.getElementById("cleardropdown").value;;
-                jsonData["file"] = read.result;
-                jsonData["type"] = "r2s"
-                //formData.append("file", fileupload.files[0]);
-                //formData.append("authdropdown", authdropdown);
-                // formData.append("cleardropdown", cleardropdown);
-                let response = await fetch('/R2sDashboard/Upload.html', {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    method: "POST",
-                    body: JSON.stringify(jsonData)
-                });
-                let data = await response.text();
-                document.getElementById("p1").innerHTML = "File: " + data + " Complete, check your database";
-                window.location.href = '/R2sDashboard/R2sDashboard.html?id=' + data
-            }
-            /*	  
-            		//Declare an EventSource
-            		  const eventSource = new EventSource('/clientcallback');
-            		  // Handler for events without an event type specified
-            		  eventSource.onmessage = (e) => {
-            		    // Do something - event data etc will be in e.data
-            */
-        }
+  <header>
+    <h1>R2s File Upload</h1>
+  </header>
+     <h3>Select Parameters</h3>
+  <form>
+ 	  <label for="authdropdown">Authentication</label>
+	  <select class="authdropdown" data-style="btn-info" name="authdropdown" id="authdropdown">
+		        <option value="Transaction">Transaction</option>
+		        <option value="Batch">Batch</option>
+		</select>    
+	  <label for="cleardropdown">Clearing</label>
+	  <select class="cleardropdown" data-style="btn-info" name="cleardropdown" id="cleardropdown">
+		        <option value="Individual">Individual</option>
+		        <option value="IndividualA">IndividualA</option>
+		        <option value="Bulk">Bulk</option>
+		</select>  
+		<br><br>	  
+       <input id="fileupload" type="file" name="fileupload" />
+      <br><br>
+      <button id="reset" type ="reset">Reset</button>
+  </form>
+  <br><br>
+ <button id="upload-button" onclick="uploadFile()"> Upload </button>
+ <button id="upload-button_ms" onclick="uploadFile_ms()"> Upload ms</button>
+ <p id="p1">Select Parameters</p>
+ <script type="text/javascript">
 
-        function uploadFile_ms() {
-            var file = fileupload.files[0],
-                read = new FileReader();
-            if (file == undefined) {
-                document.getElementById("p1").innerHTML = 'Select a file.';
-                return;
-            }
-            read.readAsBinaryString(file);
-            read.onloadend = async function() {
-                document.getElementById("p1").innerHTML = "Uploading File<br>Do not refresh the browser";
-                var jsonData = {};
-                jsonData["authdropdown"] = document.getElementById("authdropdown").value;
-                jsonData["cleardropdown"] = document.getElementById("cleardropdown").value;;
-                jsonData["file"] = read.result;
-                jsonData["type"] = "bspoke"
-                //formData.append("file", fileupload.files[0]);
-                //formData.append("authdropdown", authdropdown);
-                // formData.append("cleardropdown", cleardropdown);
-                let response = await fetch('/R2sDashboard/Upload.html', {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    method: "POST",
-                    body: JSON.stringify(jsonData)
-                });
-                let data = await response.text();
-                document.getElementById("p1").innerHTML = "File: " + data + " Complete, check your database";
-            }
-        }
-    </script>
+ 
+ function uploadFile() {
+	  var file = fileupload.files[0],
+	    read = new FileReader();
+	  if (file == undefined) {
+			document.getElementById("p1").innerHTML = 'Select a file.';
+		  return;
+	  }
+	  read.readAsBinaryString(file);	  
+	  read.onloadend = async function(){
+			document.getElementById("p1").innerHTML = "Uploading File<br>Do not refresh the browser";
+			var jsonData = {};
+			  jsonData["authdropdown"] = document.getElementById("authdropdown").value;
+			  jsonData["cleardropdown"] = document.getElementById("cleardropdown").value;;
+			  jsonData["file"] = read.result;
+			  jsonData["type"] = "r2s"
+			    //formData.append("file", fileupload.files[0]);
+			    //formData.append("authdropdown", authdropdown);
+			   // formData.append("cleardropdown", cleardropdown);
+			    let response  = await fetch('/R2sDashboard/Upload.html', {
+			        headers: {
+			            'Content-Type': 'application/json'
+			          },
+			      method: "POST", 
+			      body: JSON.stringify(jsonData)
+			    });    
+			    let data = await response.text();
+				document.getElementById("p1").innerHTML = "File: " + data +" Complete, check your database";
+				window.location.href = '/R2sDashboard/R2sDashboard.html?id=' + data
+	  }
+/*	  
+		//Declare an EventSource
+		  const eventSource = new EventSource('/clientcallback');
+		  // Handler for events without an event type specified
+		  eventSource.onmessage = (e) => {
+		    // Do something - event data etc will be in e.data
+*/		    
+	}  
+  function uploadFile_ms() {
+	  var file = fileupload.files[0],
+	    read = new FileReader();
+	  if (file == undefined) {
+			document.getElementById("p1").innerHTML = 'Select a file.';
+		  return;
+	  }
+	  read.readAsBinaryString(file);	  
+	  read.onloadend = async function(){
+			document.getElementById("p1").innerHTML = "Uploading File<br>Do not refresh the browser";
+			var jsonData = {};
+			  jsonData["authdropdown"] = document.getElementById("authdropdown").value;
+			  jsonData["cleardropdown"] = document.getElementById("cleardropdown").value;;
+			  jsonData["file"] = read.result;
+			  jsonData["type"] = "bspoke"
+			    //formData.append("file", fileupload.files[0]);
+			    //formData.append("authdropdown", authdropdown);
+			   // formData.append("cleardropdown", cleardropdown);
+			    let response  = await fetch('/R2sDashboard/Upload.html', {
+			        headers: {
+			            'Content-Type': 'application/json'
+			          },
+			      method: "POST", 
+			      body: JSON.stringify(jsonData)
+			    });    
+			    let data = await response.text();
+				document.getElementById("p1").innerHTML = "File: " + data +" Complete, check your database";
+	  }
+}
+  </script>
 
 
 </body>
-
 </html>

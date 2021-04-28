@@ -298,7 +298,7 @@ public class R2s_DAL {
 	    stquery += create_date;
 	    stquery += "' AND service = ";
 	    stquery += service;
-	    if (consensus)
+	    if (consensus)  // this is busted on subsequent to contained and really is a cheat anyway $$$
 	    	stquery += " IF status = 'R'";
 
 			
@@ -401,6 +401,9 @@ public class R2s_DAL {
 	{
 		ArrayList<JSONObject> retlist = new ArrayList<JSONObject>();
 		ArrayList<String> keys = pre_service_list.get(id);
+	    //System.out.println(id);
+	    //if (keys != null)  System.out.println(keys.size());
+	    //System.out.println(keys);
 	      if (keys != null)
 	      {
 		      for (int i = 0; i < keys.size(); i++)

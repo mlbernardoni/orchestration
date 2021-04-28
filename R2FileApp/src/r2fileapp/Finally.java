@@ -64,8 +64,9 @@ public class Finally extends HttpServlet {
 			  // ours is coming in as a string buffer
 			  R2sLib r2lib = new R2sLib(jb.toString());
 			  
-			  String callback = request.getParameterValues("callback")[0];			  
-		      System.out.println("FileImport Chain Finished!!!! " + callback);
+			  //String callback = request.getParameterValues("callback")[0];			  
+//		      System.out.println("FileImport Chain Finished!!!! " + callback);
+		      System.out.println("FileImport Chain Finished!!!! " );
 //		      System.out.println(r2lib.R2_GetParam());
 		      
 		      r2lib.R2s_Complete();

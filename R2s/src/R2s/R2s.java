@@ -418,7 +418,7 @@ public class R2s extends HttpServlet {
 		      // we have one waiting (a subsequent)
 		      if(blocked_status.equals("S"))
 		      {
-		    	  RunCompleted(rootid, blocked_service, dal);		    	  
+		    	  RunCompleted(rootid, blocked_service, dal, false);		    	  
 		      }
 		      
 		      //
@@ -452,7 +452,10 @@ public class R2s extends HttpServlet {
 					      //System.out.println(itemx); 
 				    	  String blocked_servicex = itemx.getString("blocked_service");
 				    	  
-				    	  RunCompleted(rootid, blocked_servicex, dal);	
+				    	  if (blockedlist2.size() > 1)
+				    		  RunCompleted(rootid, blocked_servicex, dal, true);	
+				    	  else
+				    		  RunCompleted(rootid, blocked_servicex, dal, false);	
 				      }
 			      }
 		      }
@@ -462,7 +465,7 @@ public class R2s extends HttpServlet {
 	}
 	
 	// check to see if we can run this baby
-	protected void RunCompleted( String rootid, String blocked_service, R2s_DAL dal) throws IOException  {
+	protected void RunCompleted( String rootid, String blocked_service, R2s_DAL dal, boolean consensus) throws IOException  {
 		
 	  // see if any services that this service has to wait for
 	  // if not send the event
@@ -484,10 +487,10 @@ public class R2s extends HttpServlet {
       // no release it
   	  if (notblocked == 0) 
   	  {
-  		  if ( blockedlist2.size() > 1)
+  		  if ( blockedlist2.size() > 1 || consensus == true)
   			  sendEvent( rootid, blocked_service, true, dal);			
   		  else
-  			  sendEvent( rootid, blocked_service, false, dal);			// no need for consensus if I am the only one
+  			  sendEvent( rootid, blocked_service, false, dal);			// $$$ this is busted for a subsequent to a service with contained counts are messed up
   	  }				    	  				  
 	}
 
