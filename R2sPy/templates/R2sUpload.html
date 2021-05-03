@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
-<link rel = "stylesheet" href="mystyle.css">
+<link rel = "stylesheet" href="static/css/style.css">
 <title>R2Dashboard</title>
 </head>
 <body>
@@ -22,11 +22,6 @@
 		        <option value="IndividualA">IndividualA</option>
 		        <option value="Bulk">Bulk</option>
 		</select>  
-		<br><br>
-	  <label for="iterations">Iterations</label>
-		<input name="iterations" id="iterations" type="number" min="0" step="1" value="1"/>
-	  <label for="waitsec">Wait (sec)</label>
-		<input name="waitsec" id="waitsec" type="number" min="0" step="1" value="10"/>
 		<br><br>	  
        <input id="fileupload" type="file" name="fileupload" />
       <br><br>
@@ -40,9 +35,6 @@
 
  
  function uploadFile() {
-		document.getElementById("p1").innerHTML = "Started";
-	  var iterations = document.getElementById("iterations").value;
-	  var waitsec = document.getElementById("waitsec").value;
 	  var file = fileupload.files[0],
 	    read = new FileReader();
 	  if (file == undefined) {
@@ -55,27 +47,22 @@
 			var jsonData = {};
 			  jsonData["Authenticate"] = document.getElementById("authdropdown").value;
 			  jsonData["Clearing"] = document.getElementById("cleardropdown").value;;
-			  jsonData["FileName"] = read.result;
+			  jsonData["Trans"] = read.result;
 			  //jsonData["type"] = "r2s"
 			  
 			    //formData.append("file", fileupload.files[0]);
 			    //formData.append("authdropdown", authdropdown);
 			   // formData.append("cleardropdown", cleardropdown);
-			   for (i = 0; i < iterations; i++)
-				   {
-				    let response  = await fetch("http://localhost:8080/R2FileApp/FileAPI.html", {
-				        headers: {
-				            'Content-Type': 'application/json'
-				          },
-				      method: "POST", 
-				      body: JSON.stringify(jsonData)
-				    });    
-				    let data = await response.text();
-				    await sleep(waitsec*1000);
-				   }
-				document.getElementById("p1").innerHTML = "Finished";
-				//document.getElementById("p1").innerHTML = "File: " + data +" Complete, check your database";
-				//window.location.href = '/R2sDashboard/R2sDashboard.html?id=' + data
+			    let response  = await fetch("/FileAPI", {
+			        headers: {
+			            'Content-Type': 'application/json'
+			          },
+			      method: "POST", 
+			      body: JSON.stringify(jsonData)
+			    });    
+			    let data = await response.text();
+				document.getElementById("p1").innerHTML = "File: " + data +" Complete, check your database";
+				window.location.href = "/R2sDashboard?id=" + data
 	  }
 /*	  
 		//Declare an EventSource
@@ -86,9 +73,6 @@
 */		    
 	}  
   function uploadFile_ms() {
-		document.getElementById("p1").innerHTML = "Started";
-	  var iterations = document.getElementById("iterations").value;
-	  var waitsec = document.getElementById("waitsec").value;
 	  var file = fileupload.files[0],
 	    read = new FileReader();
 	  if (file == undefined) {
@@ -101,29 +85,22 @@
 			var jsonData = {};
 			  jsonData["Authenticate"] = document.getElementById("authdropdown").value;
 			  jsonData["Clearing"] = document.getElementById("cleardropdown").value;;
-			  jsonData["FileName"] = read.result;
+			  jsonData["Trans"] = read.result;
 			  //jsonData["type"] = "bspoke"
 			    //formData.append("file", fileupload.files[0]);
 			    //formData.append("authdropdown", authdropdown);
 			   // formData.append("cleardropdown", cleardropdown);
-			   for (i = 0; i < iterations; i++)
-				   {
-				    let response  = await fetch("http://localhost:8080/R2FileApp/FileAPI_ms.html", {
-				        headers: {
-				            'Content-Type': 'application/json'
-				          },
-				      method: "POST", 
-				      body: JSON.stringify(jsonData)
-				    });    
-				    let data = await response.text();
-				   }
-				//document.getElementById("p1").innerHTML = "File: " + data +" Complete, check your database";
-				document.getElementById("p1").innerHTML = "Finished";
+			    let response  = await fetch("/FileAPI_ms", {
+			        headers: {
+			            'Content-Type': 'application/json'
+			          },
+			      method: "POST", 
+			      body: JSON.stringify(jsonData)
+			    });    
+			    let data = await response.text();
+				document.getElementById("p1").innerHTML = "File: " + data +" Complete, check your database";
 	  }
 }
-  function sleep(ms) {
-	  return new Promise(resolve => setTimeout(resolve, ms));
-	}
   </script>
 
 

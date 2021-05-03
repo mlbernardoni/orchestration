@@ -2,6 +2,7 @@ package r2fileapp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.UUID;
 
 import javax.servlet.ServletException;
@@ -83,12 +84,19 @@ public class FileAPI extends HttpServlet {
 				  session.execute("INSERT INTO files (file_id, file) VALUES (?, ?);", 
 							UUID.fromString(rootid), FileName);
 				  
-				  session.close();
-			      cluster.close();
-
 			  jsonObject.remove("FileName");
 			  // get the value
 			  resp = r2lib.R2s_Root(rootid, "http://localhost:8080/R2FileApp/FileImportController.html", jsonObject.toString() );
+			  
+		      String lines[] = FileName.split("\\r?\\n");
+			  String Clearing = jsonObject.getString("Clearing");			// Bulk or Individual
+			  String Authenticate = jsonObject.getString("Authenticate");			// Bulk or Individual
+			  Timestamp timestamp = new Timestamp(System.currentTimeMillis());		  
+			  session.execute("INSERT INTO tests (file_id, starttime, authenticate, clear, transactions, type) VALUES (?, ?, ?, ?, ?, ?);", 
+						UUID.fromString(rootid), timestamp, Authenticate, Clearing, (lines.length), "R2s" );
+			  session.close();
+		      cluster.close();
+
 			  
 		  } 
 		  catch (JSONException e) 

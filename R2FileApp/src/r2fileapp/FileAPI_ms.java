@@ -2,6 +2,7 @@ package r2fileapp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
@@ -87,9 +88,13 @@ public class FileAPI_ms extends HttpServlet {
 				  session.execute("INSERT INTO files (file_id, file) VALUES (?, ?);", 
 							UUID.fromString(rootid), FileName);
 				  
-				  session.close();
-			      cluster.close();
 
+			      String lines[] = FileName.split("\\r?\\n");
+				  String Clearing = jsonObject.getString("Clearing");			// Bulk or Individual
+				  String Authenticate = jsonObject.getString("Authenticate");			// Bulk or Individual
+				  Timestamp timestamp = new Timestamp(System.currentTimeMillis());		  
+				  session.execute("INSERT INTO tests (file_id, starttime, authenticate, clear, transactions, type) VALUES (?, ?, ?, ?, ?, ?);", 
+							UUID.fromString(rootid), timestamp, Authenticate, Clearing, (lines.length), "Besoke" );
 
 		      
 			  jsonObject.remove("FileName");
@@ -104,6 +109,18 @@ public class FileAPI_ms extends HttpServlet {
 		 	 //    System.out.println(e);
 		     // } 
 			  
+			  Timestamp timestamp2 = new Timestamp(System.currentTimeMillis());
+			  String endtime = timestamp2.toString();
+			  String fileid = rootid;
+			  
+			    String stquery = "UPDATE tests SET endtime  = '";
+			    stquery += endtime;
+			    stquery += "' WHERE file_id = ";
+			    stquery += fileid;
+
+			  session.execute(stquery);
+			  session.close();
+		      cluster.close();
 		  } 
 		  catch (JSONException e) 
 		  {

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<link rel = "stylesheet" href="static/css/style.css">
+<title>R2s Dashboard</title>
+</head>
+<body>
+  <header>
+    <h1>R2s Dashboard</h1>
+  </header>
+ <h2>Service Tree</h2>
+ <h3>Select a Service</h3>
+ 
+ <form onsubmit="onnewroot(); return false;">
+	<input id="newroot" pattern=".{36,36}" size="36" required>
+    <input type="submit" value="Refresh">
+</form>
+
+ 
+ <ul id="ct1" class="tree">
+ </ul>
+  
+  <br>
+	<button id="retry" onclick="onretry()"> Retry errored service </button>
+  <br>
+<p id="p1"></p>
+
+  <script type="text/javascript">
+
+  var rootid = "";
+  var rowjsondata;
+ 
+  window.addEventListener('load', (event) => 
+  {
+	const queryString = window.location.search;
+ 	const urlParams = new URLSearchParams(queryString);
+ 	
+   	document.getElementById("retry").disabled = true;
+	if (urlParams.has('id')) 
+ 	{
+		rootid = urlParams.get('id');
+		 
+		  tryit ();
+ 	}
+  })
+  
+ async  function tryit(){ 
+		 
+		document.getElementById("p1").innerHTML = "";
+		var jsonData = {};
+		  jsonData["root_service"] = rootid;
+		  jsonData["type"] = "jsontree";
+
+	  let response  = await fetch('/R2sProxy', {
+	        headers: {
+	            'Content-Type': 'application/json'
+	          },
+		      method: "POST", 
+		      body: JSON.stringify(jsonData)
+		    });    
+		    let jsontreestr = await response.text();
+		    const jsontree = JSON.parse(jsontreestr);
+			//document.getElementById("p1").innerHTML = jsontree;
+			
+	 		let ul = document.getElementById('ct1');
+	 		//console.log(jsontree);
+	 		if("record" in jsontree) {
+		 		addsubtree(ul, jsontree);
+				
+		    	CollapsibleTree.apply();
+		    	document.getElementById("newroot").value = rootid;	 			
+	 		}
+	 		else document.getElementById("newroot").value = "";
+
+		};
+
+async function onretry() {
+	
+    let serviceid = JSON.stringify(rowjsondata["service"]);
+    let rootid = JSON.stringify(rowjsondata["root_service"]);
+    serviceid = serviceid.replaceAll('"', '');    
+    rootid = rootid.replaceAll('"', '');
+	var jsonData = {};
+	jsonData["root_service"] = rootid;
+	jsonData["service"] = serviceid;
+	jsonData["type"] = "retry";
+
+    let response  = await fetch('/R2sProxy', {
+      headers: {
+          'Content-Type': 'application/json'
+        },
+	      method: "POST", 
+	      body: JSON.stringify(jsonData)
+	    });    
+	    let jsontree = await response.text();
+	    onrefresh();
+}
+
+function onnewroot() {
+	rootid =  document.getElementById("newroot").value;
+   	document.getElementById("retry").disabled = true;
+ 	
+ 	document.getElementById("ct1").innerHTML = "";
+	tryit();
+
+
+}
+			
+
+		
+function addsubtree( ele,  row){
+		//console.log(row["children"].length);
+		//console.log(JSON.stringify(row));
+		//let strstatus = JSON.stringify(row["record"]["status"]);
+		let strstatus = String(row["record"]["status"]);
+		if (strstatus === "F") strstatus = "Final";
+		else if (strstatus === "C") strstatus = "Complete";
+		else if (strstatus === "P") strstatus = "Processing";
+		else if (strstatus === "R") strstatus = "Registered";
+		else if (strstatus === "E") strstatus = "Errored";
+		
+		let strtype = String(row["record"]["servicetype"]);
+		if (strtype === "F") strtype = "OnFinal";
+		else if (strtype === "C") strtype = "Contained";
+		else if (strtype === "S") strtype = "Subsequent";
+		else if (strtype === "I") strtype = "Independant";
+		else if (strtype === "E") strtype = "OnError";
+		else if (strtype === "R") strtype = "Root";
+		let strurl = String(row["record"]["service_url"]);
+		var parts = strurl.split('/');
+		strurl = parts[parts.length - 1];
+		
+	    let jsontext = row["children"].length + " <b>Type:</b> " + strtype +   " <b>Status:</b> " + strstatus +  " <b>URL:</b> " + strurl;
+	    let jsondata = JSON.stringify(row["record"]); // put the record as a string into data-value
+	    jsontext = jsontext.replaceAll('"', '');
+	    let li = document.createElement('li');
+		li.setAttribute('data-value', jsondata);
+	    ele.appendChild(li);
+	    let span = document.createElement('span');
+	    li.appendChild(span);
+	    span.innerHTML += jsontext;
+	    let newobj = row["children"];
+	    if (newobj.length > 0)
+	    {
+	        let ul = document.createElement('ul');
+	        li.appendChild(ul);
+			//console.log(newobj.length);
+	        for ( let i = 0; i < newobj.length; i++)
+	        {
+   				//console.log(newobj[i]);
+	            addsubtree(ul, newobj[i]);
+	        }
+	    }
+	}
+ 
+
+   
+const CollapsibleTree = (function(){
+
+  // Makes all trees with the class 'tree' collapsible. The
+  // parameter is:
+  //
+  // doNotRecurse - true if sub-trees should not be made collapsible
+  var myele = null;
+  function apply(doNotRecurse){
+
+    [].forEach.call(document.getElementsByTagName('ul'), node => {
+
+      if (node.classList.contains('tree')){
+
+        applyTo(node, true);
+
+        if (!doNotRecurse){
+
+          [].forEach.call(node.getElementsByTagName('ul'), subnode => {
+            subnode.classList.add('tree')
+          });
+        }
+      }
+    })
+  }
+
+ 
+
+  // Makes the specified tree collapsible. The parameters are:
+  //
+  // node         - the tree element
+  // doNotRecurse - true if sub-trees should not be made collapsible
+  function applyTo(node, doNotRecurse){
+	  let firsttime = 0;
+
+    [].forEach.call(node.getElementsByTagName('li'), li => {
+
+      if (!doNotRecurse || node === li.parentNode){
+
+        li.style.userSelect       = 'none';
+        li.style.MozUserSelect    = 'none';
+        li.style.msUserSelect     = 'none';
+        li.style.WebkitUserSelect = 'none';
+
+        li.addEventListener('click', handleClick.bind(null, li));
+
+        toggle(li);
+        if (firsttime == 0) {
+        	firsttime = 1;
+            toggle(li);
+       }
+
+      }
+
+    });
+
+  }
+
+  // Handles a click. The parameter is:
+  //
+  // node - the node for which clicks are being handled
+  function handleClick(node, e){
+
+    let li = e.target;
+    
+//document.getElementById("p1").innerHTML = li.innerHTML; //innerText textContent
+//document.getElementById("p1").innerHTML = li.childNodes[0].textContent ;
+
+//li.style.backgroundColor = "lightblue";
+
+    while (li.nodeName !== 'LI'){
+      li = li.parentNode;
+    }
+
+    if (li === node) {
+      toggle(node);
+    
+    	if (myele != li.querySelector("span"))
+    	{
+    	    let jsondata = JSON.parse(li.getAttribute('data-value'));	// data-value has the record
+    	    rowjsondata = jsondata;
+    	    let jsondatastr = JSON.stringify(jsondata["service"]);
+    	    let jsonstatusstr = JSON.stringify(jsondata["status"]);
+    	    
+   	    	jsondatastr = jsondatastr.replaceAll('"', '');
+    	    document.getElementById("p1").innerHTML = "Selected Service: " + jsondatastr;
+    	    
+    	    jsonstatusstr = jsonstatusstr.replaceAll('"', '');
+	   	    if (jsonstatusstr == "E")
+    	    	document.getElementById("retry").disabled = false;
+    	    else
+    	    	document.getElementById("retry").disabled = true;
+	   	    //document.getElementById("p1").innerHTML = li.getAttribute('data-value');
+	    	if (myele != null)
+			    myele.style.backgroundColor = "#F0FFFF";
+		    myele = li.querySelector("span");
+		    myele.style.backgroundColor  = "#ADD8E6";
+		}
+    }
+  }
+
+  // Opens or closes the unordered tree elements directly within the
+  // specified node. The parameter is:
+  //
+  // node - the node containing the unordered tree elements
+  function toggle(node){
+
+
+    const open = node.classList.contains('treeClosed');
+    const uls  = node.getElementsByTagName('ul');
+    //console.log(node);
+
+    [].forEach.call(uls, ul => {
+
+       let li = ul;
+      while (li.nodeName !== 'LI'){
+        li = li.parentNode;
+      }
+
+      if (li === node){
+        ul.style.display = (open ? 'block' : 'none');
+      }
+
+    });
+
+    node.classList.remove('treeOpen');
+    node.classList.remove('treeClosed');
+
+    if (uls.length > 0){
+      node.classList.add('tree' + (open ? 'Open' : 'Closed'));
+    }
+
+  }
+
+  return {apply, applyTo};
+
+})();
+
+</script>
+</body>
+</html>

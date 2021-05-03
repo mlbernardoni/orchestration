@@ -11,6 +11,15 @@
   </welcome-file-list>
   <servlet>
     <description> </description>
+    <servlet-name>Tests</servlet-name>
+    <servlet-class>r2fileapp.Tests</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Tests</servlet-name>
+    <url-pattern>/Tests.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
     <servlet-name>FileAPI</servlet-name>
     <servlet-class>r2fileapp.FileAPI</servlet-class>
   </servlet>

@@ -609,14 +609,15 @@ public class R2s extends HttpServlet {
 		      else if (r2type.equals("searchlist")) {	// doesn't need dal.RetrieveServiceTree(rootid); so here up front
 			      //System.out.println("searchlist");
 		    	  strep = dal.RetrieveSearchList(jsonObject);
+			      //System.out.println(strep);
 		      }
 		      else
 		      {
 				  String rootid = jsonObject.getString("root_service");	// everything after this point needs dal.RetrieveServiceTree(rootid);
 		    	  dal.RetrieveServiceTree(rootid);
 			      if (r2type.equals("jsontree")) {
-				      //System.out.println("jsontree");
 			    	  strep = dal.RetrieveJsonTree(rootid);
+				      //System.out.println(strep);
 			      }
 			      else if (r2type.equals("retry")) {
 				      DoRetry(jsonObject, dal);
@@ -694,7 +695,7 @@ public class R2s extends HttpServlet {
 		  }
 		  catch (JSONException e) 
 		  {
-			  throw new IOException(jb.toString());
+			  throw new IOException(e);
 		  }
 		//System.out.println(strep);
 		response.getWriter().append(strep);

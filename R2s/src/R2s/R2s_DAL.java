@@ -216,20 +216,24 @@ public class R2s_DAL {
 		long endtime = jsonObject.getBigInteger("endtime").longValue();	  	
 		Timestamp starttimel = new Timestamp(starttime);		  
 		Timestamp endtimel = new Timestamp(endtime);		  
-	    //System.out.println(starttimel);
-	    //System.out.println(endtimel);
+	    System.out.println(starttimel);
+	    System.out.println(endtimel);
 
 		JSONArray newchildarray = new JSONArray();
 		String stquery = "select distinct root_service from rtoos.service_tree";
 		ResultSet resultSet = session2.execute(stquery);
 		List<Row> all = resultSet.all();
+	    System.out.println(all.size());
 	    for (int i = 0; i < all.size(); i++)
 	    {
+		    //System.out.println("OY1");
 	    	String jsonstr = all.get(i).getUUID("root_service").toString();
+		    //System.out.println(jsonstr);
 			String stquery2 = "select JSON * from rtoos.service_tree where root_service = " + jsonstr + " and service = " + jsonstr;
 			ResultSet resultSet2 = session2.execute(stquery2);
 			List<Row> all2 = resultSet2.all();
 	    	String jsonstr2 = all2.get(0).getString("[json]");
+		    //System.out.println("OY2");
 		    //System.out.println(jsonstr2);
 			JSONObject jsonrow =  new JSONObject(jsonstr2);
 	    	String jsondate = jsonrow.getString("create_date");
@@ -237,6 +241,7 @@ public class R2s_DAL {
 		    //System.out.println(jsondate);
 		    Instant instant = Instant.parse ( jsondate );
 	    	Timestamp createl = Timestamp.from(instant);
+		    //System.out.println("OY3");
 		    //System.out.println(createl); 
 	    	if(createl.after(starttimel) && createl.before(endtimel))
 	    	{

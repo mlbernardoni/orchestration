@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<link rel = "stylesheet" href="static/css/style.css">
+<title>R2Dashboard</title>
+</head>
+<body>
+  <header>
+    <h1>R2s Search</h1>
+  </header>
+	 <form>
+    <fieldset>
+		<label for="startdate">Start date:</label>		
+		<input type="date" id="startdate" name="startdate">
+		<label for="starttime">time:</label>		
+		<input type="time" id="starttime" name="starttime">
+		<label for="enddate">  End date:</label>		
+		<input type="date" id="enddate" name="enddate">
+		<label for="endtime">time:</label>		
+		<input type="time" id="endtime" name="endtime">
+    </fieldset>
+  </form>
+  <br>
+  <button id="search-button" onclick="onSearch()"> Search </button>
+  
+ <ul id="ct1" class="tree">
+ </ul>
+ <p id="p1"> </p>
+  <br>
+ <button id="display-button" disabled onclick="onDisplay()"> Display </button>
+ <script type="text/javascript">
+ var rootid = "";
+ var rowjsondata;
+ var endobj;
+ var startobj;
+ 
+
+ function onDisplay(){
+		window.location.href = '/R2sDashboard?id=' + rootid		
+	}
+ function onSearch() {
+  		document.getElementById("display-button").disabled = true;
+		document.getElementById("p1").innerHTML = "";
+		rootid = "";
+	 
+	    //const jsontreestr = JSON.parse(jsontree);
+		//addsubtree(ul, jsontreestr);
+		
+    	//CollapsibleTree.apply();
+    	
+        endobj = Date.now()
+        startobj = Date.parse("2021-04-12T00:00:00");
+    	var startdate = document.getElementById("startdate").value;
+    	var starttime = document.getElementById("starttime").value;
+      	var enddate = document.getElementById("enddate").value;
+    	var endtime = document.getElementById("endtime").value;
+       	var enddaytime = enddate + 'T' + endtime;
+    	if (startdate != "" ){
+    		if (starttime == "") starttime = "00:00:00";
+        	var startdaytime = startdate + 'T' + starttime;
+        	startobj = Date.parse(startdaytime);
+    	}
+    	if (enddate != "" ){
+    		if (endtime == "") endtime = "23:59:50";
+        	var enddaytime = enddate + 'T' + endtime;
+        	endobj = Date.parse(enddaytime);
+    	}
+		document.getElementById("ct1").innerHTML = "";
+		tryit();
+ 	}
+ 
+ async  function tryit(){ 
+	var jsonData = {};
+	jsonData["type"] = "searchlist";
+	jsonData["starttime"] = startobj;
+	jsonData["endtime"] = endobj;
+
+  	let response  = await fetch('/R2sProxy', {
+        headers: {
+            'Content-Type': 'application/json'
+          },
+	      method: "POST", 
+	      body: JSON.stringify(jsonData)
+	    });    
+  	
+	    let jsonliststr = await response.text();
+	    
+	    var mylist = JSON.parse(jsonliststr);
+		
+ 		let ul = document.getElementById('ct1');
+		 for (let i = 0; i < mylist.length; i++){
+			const row = mylist[i];
+			let jsontext = "<b>Time:</b>&nbsp" + row["create_date"].toString() + "&nbsp&nbsp&nbsp<b>Root Service:</b>&nbsp" + row["service"].toString() + "&nbsp&nbsp&nbsp<b>URL:</b>&nbsp" + row["service_url"].toString() + "&nbsp&nbsp&nbsp<b>Param:</b>&nbsp" + row["service_param"].toString() ;
+		    jsontext = jsontext.replaceAll('"', '');
+		    let li = document.createElement('li');
+			li.setAttribute('data-value', row["root_service"].toString());
+			ul.appendChild(li);
+		    let span = document.createElement('span');
+		    li.appendChild(span);
+		    span.innerHTML += jsontext;		 
+		 }
+	 	CollapsibleTree.apply();
+}
+
+
+
+const CollapsibleTree = (function(){
+
+// Makes all trees with the class 'tree' collapsible. The
+// parameter is:
+//
+// doNotRecurse - true if sub-trees should not be made collapsible
+var myele = null;
+function apply(doNotRecurse){
+
+ [].forEach.call(document.getElementsByTagName('ul'), node => {
+
+   if (node.classList.contains('tree')){
+
+     applyTo(node, true);
+
+     if (!doNotRecurse){
+
+       [].forEach.call(node.getElementsByTagName('ul'), subnode => {
+         subnode.classList.add('tree')
+       });
+     }
+   }
+ })
+}
+
+
+
+// Makes the specified tree collapsible. The parameters are:
+//
+// node         - the tree element
+// doNotRecurse - true if sub-trees should not be made collapsible
+function applyTo(node, doNotRecurse){
+
+ [].forEach.call(node.getElementsByTagName('li'), li => {
+
+   if (!doNotRecurse || node === li.parentNode){
+
+     li.style.userSelect       = 'none';
+     li.style.MozUserSelect    = 'none';
+     li.style.msUserSelect     = 'none';
+     li.style.WebkitUserSelect = 'none';
+
+     li.addEventListener('click', handleClick.bind(null, li));
+     li.addEventListener('dblclick', handledblClick.bind(null, li));
+
+     toggle(li);
+
+   }
+
+ });
+
+}
+function handledblClick(node, e){
+	handleClick(node, e);
+	onDisplay();
+}
+
+// Handles a click. The parameter is:
+//
+// node - the node for which clicks are being handled
+function handleClick(node, e){
+
+ let li = e.target;
+ 
+//document.getElementById("p1").innerHTML = li.innerHTML; //innerText textContent
+//document.getElementById("p1").innerHTML = li.childNodes[0].textContent ;
+
+//li.style.backgroundColor = "lightblue";
+
+ while (li.nodeName !== 'LI'){
+   li = li.parentNode;
+ }
+
+ if (li === node) {
+   toggle(node);
+ 
+ 	if (myele != li.querySelector("span"))
+ 	{
+ 	    let jsondatastr = li.getAttribute('data-value');	// data-value has the record
+	    jsondatastr = jsondatastr.replaceAll('"', '');
+ 	    document.getElementById("p1").innerHTML = "Selected Service: " + jsondatastr;
+ 	    rootid = jsondatastr
+ 	    
+ 	    	document.getElementById("display-button").disabled = false;
+	   	    //document.getElementById("p1").innerHTML = li.getAttribute('data-value');
+	    	if (myele != null)
+			    myele.style.backgroundColor = "#F0FFFF";
+		    myele = li.querySelector("span");
+		    myele.style.backgroundColor  = "#ADD8E6";
+		}
+ }
+}
+
+// Opens or closes the unordered tree elements directly within the
+// specified node. The parameter is:
+//
+// node - the node containing the unordered tree elements
+function toggle(node){
+
+
+ const open = node.classList.contains('treeClosed');
+ const uls  = node.getElementsByTagName('ul');
+//console.log(node);
+
+ [].forEach.call(uls, ul => {
+
+    let li = ul;
+   while (li.nodeName !== 'LI'){
+     li = li.parentNode;
+   }
+
+   if (li === node){
+     ul.style.display = (open ? 'block' : 'none');
+   }
+
+ });
+
+ node.classList.remove('treeOpen');
+ node.classList.remove('treeClosed');
+
+ if (uls.length > 0){
+   node.classList.add('tree' + (open ? 'Open' : 'Closed'));
+ }
+
+}
+
+return {apply, applyTo};
+
+})();
+
+</script>
+
+
+</body>
+</html>
