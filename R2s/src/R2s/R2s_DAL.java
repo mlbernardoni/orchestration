@@ -1,5 +1,6 @@
 package R2s;
 import java.io.ByteArrayOutputStream;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
@@ -11,16 +12,22 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
+//import com.datastax.driver.core.Cluster;
+//import com.datastax.driver.core.ResultSet;
+//import com.datastax.driver.core.Row;
+//import com.datastax.driver.core.Session;
+
+
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 
 //import com.datastax.driver.core.Cluster;  
 
 public class R2s_DAL {
-	public static Cluster r2scluster;
-	private static String CASSANDRA_URL = "127.0.0.1";
+//	public static Cluster r2scluster;
+//	private static String CASSANDRA_URL = "127.0.0.1";
 	private LinkedHashMap<String, JSONObject> id_to_row;
 	private LinkedHashMap<String, ArrayList<String>> id_to_children;
 
@@ -30,17 +37,27 @@ public class R2s_DAL {
 	
 	private String rootid;
 	
-	private Session session2;
+//	private Session session2;
+	
+	private static DriverConfigLoader loader; 
+	private static CqlSession cqlsess; 
 
 	
 	static public void create() {
 		try {
 			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();           
 			InputStream stream = classLoader.getResourceAsStream("../R2sConfiguration.json");
+			
+			loader = DriverConfigLoader.fromClasspath("../WEB-INF/application.conf");
+			cqlsess = CqlSession.builder().withConfigLoader(loader).build();
+			cqlsess.execute("USE rtoos"); 
+			System.out.println("Connected!"); 
+	        
 			if (stream == null) {
 			    System.out.println("R2sConfiguration.json missing from WEB-INF folder");
 			    // might as well try with default
-				r2scluster = Cluster.builder().addContactPoint(CASSANDRA_URL).build();		
+			    
+				// r2scluster = Cluster.builder().addContactPoint(CASSANDRA_URL).build();		
 				return;
 			}
 			ByteArrayOutputStream result = new ByteArrayOutputStream();
@@ -49,17 +66,17 @@ public class R2s_DAL {
 			     result.write(buffer, 0, length);
 			}
 			// StandardCharsets.UTF_8.name() > JDK 7
-			JSONObject r2sconifg =  new JSONObject(result.toString("UTF-8"));
-			CASSANDRA_URL = r2sconifg.getString("CASSANDRA_URL");
-			r2scluster = Cluster.builder().addContactPoint(CASSANDRA_URL).build();		
+//			JSONObject r2sconifg =  new JSONObject(result.toString("UTF-8"));
+//			CASSANDRA_URL = r2sconifg.getString("CASSANDRA_URL");
+//			r2scluster = Cluster.builder().addContactPoint(CASSANDRA_URL).build();		
 		} 
-	catch (IOException e) {
+		catch (IOException e) {
 	      System.out.println(e.toString());
 		}
 
 	}
 	static public void destroy() {
-    	r2scluster.close();	// not sure this does anything		
+//    	r2scluster.close();	// not sure this does anything		
 	}
 
 	public void Init() throws IOException
@@ -76,8 +93,9 @@ public class R2s_DAL {
 		{
 			try {
 				
-				session2 = r2scluster.connect();
-				session2.execute("USE rtoos");
+//				session2 = r2scluster.connect();
+//				session2.execute("USE rtoos");
+				cqlsess.execute("USE rtoos"); 
 				return;
 			}
 			catch(Exception e) {
@@ -100,7 +118,8 @@ public class R2s_DAL {
 	}
     public void CleanUp() {
     	
-    	session2.close();	// not sure this does anything
+//    	session2.close();	// not sure this does anything
+    	cqlsess.close();
     }
     
 	
@@ -110,10 +129,11 @@ public class R2s_DAL {
 		id_to_row.clear();
 		id_to_children.clear();
 
-		String stquery = "SELECT JSON * FROM service_tree WHERE ";
+		String stquery = "SELECT JSON * FROM rtoos.service_tree WHERE ";
 		stquery += "root_service = ";
 		stquery += rootid;
-	    ResultSet resultSet = session2.execute(stquery);
+//	    ResultSet resultSet = session2.execute(stquery);
+		ResultSet resultSet = cqlsess.execute(stquery);
 	    List<Row> all = resultSet.all();
 	    for (int i = 0; i < all.size(); i++)
 	    {
@@ -140,10 +160,10 @@ public class R2s_DAL {
 		blocked_service_list.clear();
 		blocked_list.clear();
 
-		String stquery = "SELECT JSON * FROM blocked_list WHERE ";
+		String stquery = "SELECT JSON * FROM rtoos.blocked_list WHERE ";
 		stquery += "root_service = ";
 		stquery += rootid;
-		ResultSet resultSet = session2.execute(stquery);
+		ResultSet resultSet = cqlsess.execute(stquery);
 		List<Row> all = resultSet.all();
 	    for (int i = 0; i < all.size(); i++)
 	    {
@@ -221,16 +241,16 @@ public class R2s_DAL {
 
 		JSONArray newchildarray = new JSONArray();
 		String stquery = "select distinct root_service from rtoos.service_tree";
-		ResultSet resultSet = session2.execute(stquery);
+		ResultSet resultSet = cqlsess.execute(stquery);
 		List<Row> all = resultSet.all();
 	    System.out.println(all.size());
 	    for (int i = 0; i < all.size(); i++)
 	    {
 		    //System.out.println("OY1");
-	    	String jsonstr = all.get(i).getUUID("root_service").toString();
+	    	String jsonstr = all.get(i).getUuid("root_service").toString();
 		    //System.out.println(jsonstr);
 			String stquery2 = "select JSON * from rtoos.service_tree where root_service = " + jsonstr + " and service = " + jsonstr;
-			ResultSet resultSet2 = session2.execute(stquery2);
+			ResultSet resultSet2 = cqlsess.execute(stquery2);
 			List<Row> all2 = resultSet2.all();
 	    	String jsonstr2 = all2.get(0).getString("[json]");
 		    //System.out.println("OY2");
@@ -296,7 +316,7 @@ public class R2s_DAL {
 	    
 		jsonobj.put("status", "P");
 	    id_to_row.put(jsonobj.getString("service"), jsonobj);
-	    String stquery = "UPDATE service_tree SET status  = 'P' WHERE ";
+	    String stquery = "UPDATE rtoos.service_tree SET status  = 'P' WHERE ";
 	    stquery += "root_service = ";
 	    stquery += root;
 	    stquery += " AND create_date = '";
@@ -308,15 +328,17 @@ public class R2s_DAL {
 
 			
 		//System.out.println(stquery);	  
-		ResultSet resultSet3 = session2.execute(stquery);
+		ResultSet resultSet3 = cqlsess.execute(stquery);
+		System.out.println("UpdateSendStatus!"); 
 		return resultSet3.wasApplied();
 		
 	}
 	
 	public void UpdateServiceRow(JSONObject jsonobj)
 	{
-		String jsonquery = "INSERT INTO service_tree JSON '" + jsonobj.toString() +"'";
-		session2.execute(jsonquery);
+		String jsonquery = "INSERT INTO rtoos.service_tree JSON '" + jsonobj.toString() +"'";
+		cqlsess.execute(jsonquery);
+		System.out.println("Query UpdateServiceRow!"); 
 				
 	    String service = jsonobj.getString("service");
 	    String parent = jsonobj.getString("parent_service");
@@ -375,8 +397,8 @@ public class R2s_DAL {
 
 	public void UpdateBlockedRow(JSONObject blockedrow)
 	{
-		String jsonquery = "INSERT INTO blocked_list JSON '" + blockedrow.toString() +"'";
-		session2.execute(jsonquery);
+		String jsonquery = "INSERT INTO rtoos.blocked_list JSON '" + blockedrow.toString() +"'";
+		cqlsess.execute(jsonquery);
 		
 	    String pre_service = blockedrow.getString("pre_service");
 	    String blocked_service = blockedrow.getString("blocked_service");
@@ -426,8 +448,8 @@ public class R2s_DAL {
 	
 	public String DoClean()
 	{
-	      session2.execute("TRUNCATE service_tree;");
-	      session2.execute("TRUNCATE blocked_list;");
+	      cqlsess.execute("TRUNCATE rtoos.service_tree;");
+	      cqlsess.execute("TRUNCATE rtoos.blocked_list;");
 		  id_to_row.clear();
 		  id_to_children.clear();
 	      return  "Cleaned";	
