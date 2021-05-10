@@ -11,16 +11,26 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import software.aws.mcs.auth.SigV4AuthProvider;
+
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
+
 
 //import com.datastax.driver.core.Cluster;  
 
 public class R2s_DAL {
 	public static Cluster r2scluster;
 	private static String CASSANDRA_URL = "127.0.0.1";
+	private static Integer CASSANDRA_PORT = 0;
+	private static String CASSANDRA_AUTH = "";
+	private static String CASSANDRA_USER = ""; 
+	private static String CASSANDRA_PASSWORD = ""; 
 	private LinkedHashMap<String, JSONObject> id_to_row;
 	private LinkedHashMap<String, ArrayList<String>> id_to_children;
 
@@ -35,8 +45,12 @@ public class R2s_DAL {
 	
 	static public void create() {
 		try {
-			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();           
-			InputStream stream = classLoader.getResourceAsStream("../R2sConfiguration.json");
+			
+			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();         
+			//URL str = classLoader.getResource("../R2sConfiguration.cfg");
+			InputStream stream = classLoader.getResourceAsStream("../R2sConfiguration.cfg");
+			//InputStream stream = classLoader.getResourceAsStream("../R2sConfigurationERROR.cfg");
+			
 			if (stream == null) {
 			    System.out.println("R2sConfiguration.json missing from WEB-INF folder");
 			    // might as well try with default
@@ -48,10 +62,22 @@ public class R2s_DAL {
 			for (int length; (length = stream.read(buffer)) != -1; ) {
 			     result.write(buffer, 0, length);
 			}
+			//stream.close();
 			// StandardCharsets.UTF_8.name() > JDK 7
 			JSONObject r2sconifg =  new JSONObject(result.toString("UTF-8"));
 			CASSANDRA_URL = r2sconifg.getString("CASSANDRA_URL");
-			r2scluster = Cluster.builder().addContactPoint(CASSANDRA_URL).build();		
+			CASSANDRA_PORT = r2sconifg.getInt("CASSANDRA_PORT");
+			CASSANDRA_AUTH = r2sconifg.getString("CASSANDRA_AUTH");
+			CASSANDRA_USER = r2sconifg.getString("CASSANDRA_USER");
+			CASSANDRA_PASSWORD = r2sconifg.getString("CASSANDRA_PASSWORD");
+
+			r2scluster = Cluster.builder()
+					.addContactPoint(CASSANDRA_URL)
+					.withPort(CASSANDRA_PORT)
+					.withAuthProvider(new SigV4AuthProvider(CASSANDRA_AUTH))
+                    .withSSL()
+					.withCredentials(CASSANDRA_USER, CASSANDRA_PASSWORD)
+					.build();
 		} 
 	catch (IOException e) {
 	      System.out.println(e.toString());
@@ -113,7 +139,10 @@ public class R2s_DAL {
 		String stquery = "SELECT JSON * FROM service_tree WHERE ";
 		stquery += "root_service = ";
 		stquery += rootid;
-	    ResultSet resultSet = session2.execute(stquery);
+		Statement  st = new SimpleStatement(stquery);
+	    st.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		if (r2scluster== null || r2scluster.isClosed()) create();		
+	    ResultSet resultSet = session2.execute(st);
 	    List<Row> all = resultSet.all();
 	    for (int i = 0; i < all.size(); i++)
 	    {
@@ -143,7 +172,10 @@ public class R2s_DAL {
 		String stquery = "SELECT JSON * FROM blocked_list WHERE ";
 		stquery += "root_service = ";
 		stquery += rootid;
-		ResultSet resultSet = session2.execute(stquery);
+		Statement  st = new SimpleStatement(stquery);
+	    st.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		if (r2scluster== null || r2scluster.isClosed()) create();		
+		ResultSet resultSet = session2.execute(st);
 		List<Row> all = resultSet.all();
 	    for (int i = 0; i < all.size(); i++)
 	    {
@@ -216,38 +248,57 @@ public class R2s_DAL {
 		long endtime = jsonObject.getBigInteger("endtime").longValue();	  	
 		Timestamp starttimel = new Timestamp(starttime);		  
 		Timestamp endtimel = new Timestamp(endtime);		  
-	    System.out.println(starttimel);
-	    System.out.println(endtimel);
+	    //System.out.println(starttimel);
+	    //System.out.println(endtimel);
 
 		JSONArray newchildarray = new JSONArray();
-		String stquery = "select distinct root_service from rtoos.service_tree";
-		ResultSet resultSet = session2.execute(stquery);
+		String stquery = "select JSON root_service, create_date, service from rtoos.service_tree";
+//		String stquery = "select distinct root_service from rtoos.service_tree";
+		Statement  st = new SimpleStatement(stquery);
+	    st.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		if (r2scluster== null || r2scluster.isClosed()) create();		
+		ResultSet resultSet = session2.execute(st);
 		List<Row> all = resultSet.all();
-	    System.out.println(all.size());
+	    //System.out.println(all.size());
+		String temproot = "";
 	    for (int i = 0; i < all.size(); i++)
 	    {
+	    	String jsonstrroot = all.get(i).getString("[json]");
+			JSONObject jsonroot =  new JSONObject(jsonstrroot);
 		    //System.out.println("OY1");
-	    	String jsonstr = all.get(i).getUUID("root_service").toString();
-		    //System.out.println(jsonstr);
-			String stquery2 = "select JSON * from rtoos.service_tree where root_service = " + jsonstr + " and service = " + jsonstr;
-			ResultSet resultSet2 = session2.execute(stquery2);
-			List<Row> all2 = resultSet2.all();
-	    	String jsonstr2 = all2.get(0).getString("[json]");
-		    //System.out.println("OY2");
-		    //System.out.println(jsonstr2);
-			JSONObject jsonrow =  new JSONObject(jsonstr2);
-	    	String jsondate = jsonrow.getString("create_date");
-	    	jsondate = jsondate.replace(' ', 'T');
-		    //System.out.println(jsondate);
-		    Instant instant = Instant.parse ( jsondate );
-	    	Timestamp createl = Timestamp.from(instant);
-		    //System.out.println("OY3");
-		    //System.out.println(createl); 
-	    	if(createl.after(starttimel) && createl.before(endtimel))
-	    	{
-				newchildarray.put(jsonrow);	    		
+	    	String jsonstr = jsonroot.getString("root_service").toString();
+	    	String rootdate = jsonroot.getString("create_date");
+	    	String jsonserv = jsonroot.getString("service");
+	    	if (!temproot.equals(jsonstr) && jsonstr.equals(jsonserv)) {
+	    		temproot = jsonstr;
+				String stquery2 = "select JSON * from rtoos.service_tree where root_service = " + jsonstr + " and create_date = '" + rootdate + "' and service = " + jsonstr;
+				Statement  st2 = new SimpleStatement(stquery2);
+				st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+				if (r2scluster== null || r2scluster.isClosed()) create();		
+				ResultSet resultSet2 = session2.execute(st2);
+				List<Row> all2 = resultSet2.all();
+				if (all2 != null) {
+					
+			    	String jsonstr2 = all2.get(0).getString("[json]");
+				    //System.out.println("OY2");
+				    //System.out.println(jsonstr2);
+					JSONObject jsonrow =  new JSONObject(jsonstr2);
+			    	String jsondate = jsonrow.getString("create_date");
+			    	jsondate = jsondate.replace(' ', 'T');
+				    //System.out.println(jsondate);
+				    Instant instant = Instant.parse ( jsondate );
+			    	Timestamp createl = Timestamp.from(instant);
+				    //System.out.println("OY3");
+				    //System.out.println(createl); 
+			    	if(createl.after(starttimel) && createl.before(endtimel))
+			    	{
+						newchildarray.put(jsonrow);	    		
+			    	}
+				}
+	    		
 	    	}
 	    }
+	    //System.out.println("OY1");
 		return newchildarray.toString();
 	}
 	
@@ -308,7 +359,10 @@ public class R2s_DAL {
 
 			
 		//System.out.println(stquery);	  
-		ResultSet resultSet3 = session2.execute(stquery);
+		Statement  st2 = new SimpleStatement(stquery);
+		st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		if (r2scluster== null || r2scluster.isClosed()) create();		
+		ResultSet resultSet3 = session2.execute(st2);
 		return resultSet3.wasApplied();
 		
 	}
@@ -316,7 +370,12 @@ public class R2s_DAL {
 	public void UpdateServiceRow(JSONObject jsonobj)
 	{
 		String jsonquery = "INSERT INTO service_tree JSON '" + jsonobj.toString() +"'";
-		session2.execute(jsonquery);
+		Statement  st = new SimpleStatement(jsonquery);
+		  st.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+
+		//System.out.println(st);
+		if (r2scluster== null || r2scluster.isClosed()) create();		
+		session2.execute(st);
 				
 	    String service = jsonobj.getString("service");
 	    String parent = jsonobj.getString("parent_service");
@@ -376,7 +435,10 @@ public class R2s_DAL {
 	public void UpdateBlockedRow(JSONObject blockedrow)
 	{
 		String jsonquery = "INSERT INTO blocked_list JSON '" + blockedrow.toString() +"'";
-		session2.execute(jsonquery);
+		Statement  st = new SimpleStatement(jsonquery);
+	    st.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		if (r2scluster== null || r2scluster.isClosed()) create();		
+		session2.execute(st);
 		
 	    String pre_service = blockedrow.getString("pre_service");
 	    String blocked_service = blockedrow.getString("blocked_service");
@@ -426,6 +488,7 @@ public class R2s_DAL {
 	
 	public String DoClean()
 	{
+		if (r2scluster== null || r2scluster.isClosed()) create();		
 	      session2.execute("TRUNCATE service_tree;");
 	      session2.execute("TRUNCATE blocked_list;");
 		  id_to_row.clear();

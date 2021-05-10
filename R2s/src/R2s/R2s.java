@@ -42,7 +42,7 @@ public class R2s extends HttpServlet {
     
     public void init(ServletConfig config) throws ServletException {
    	  	R2s_DAL.create();
-   	  	mysemaphore = new Semaphore(150);	// must be > 1
+   	  	mysemaphore = new Semaphore(75);	// must be > 1
     }
     
     public void destroy() {

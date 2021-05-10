@@ -13,12 +13,16 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 
-import R2sLib.*;
+import R2sLib.R2sLib;
+
+//import R2sLib.*;
 
 
 /**
@@ -35,14 +39,6 @@ public class TransactionController extends HttpServlet {
         super();
         // TODO Auto-generated constructor stub
     }
-
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-	}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
@@ -94,9 +90,23 @@ public class TransactionController extends HttpServlet {
 			  //
 			  // first things first, setup connection to DB
 			  //
-			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-			  Session session = cluster.connect();
+			  //Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  FileAPI.DBConnect();
+			  Session session =  FileAPI.cluster.connect();
 			  session.execute("USE testapp");
+			  //
+			  // get all the transactions for the file
+			  //
+			  String stquery = "SELECT *  FROM transactions WHERE ";
+		      stquery += "file_id = ";
+		      stquery += fileid;
+		      Statement  st2 = new SimpleStatement(stquery);
+		      st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		      ResultSet resultSet = session.execute(st2);
+			  session.close();
+		      //cluster.close();
+
+		      List<Row> all = resultSet.all();
 			  
 			  
 			  if (Clearing.equals("Bulk"))
@@ -107,20 +117,9 @@ public class TransactionController extends HttpServlet {
 				  
 				  //
 				  // create the bulkclear service
-				  r2lib.R2s_Subsequent("http://localhost:8080/R2FileApp/ClearBulk.html", "Clear Bulk");
+				  r2lib.R2s_Subsequent(FileAPI.FILEAPPURL + "/ClearBulk.html", "Clear Bulk");
 			      //System.out.println(BulkClear);
 				  					  
-				  //
-				  // get all the transactions for the file
-				  //
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      ResultSet resultSet = session.execute(stquery);
-				  session.close();
-			      cluster.close();
-
-			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
 			      {			    	  
 				      //  System.out.println("Transaction Found It: ");
@@ -128,7 +127,7 @@ public class TransactionController extends HttpServlet {
 				      //
 				      // create the authenticate service
 				      //
-				      r2lib.R2s_Contained(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction", 3, 6000, 6000);
+				      r2lib.R2s_Contained(serviceid, FileAPI.FILEAPPURL + "/AuthTransaction.html", "Authenticate Transaction", 3, 6000, 6000);
 			      }    
 			  }
 			  else if (Clearing.equals("Individual") )
@@ -136,27 +135,22 @@ public class TransactionController extends HttpServlet {
 			      // //////////////////////////////////////////////////////
 				  // Individual
 			      // //////////////////////////////////////////////////////
-				  //
-				  // get all the transactions for the file
-				  //
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      ResultSet resultSet = session.execute(stquery);
-				  session.close();
-			      cluster.close();
-
-			      List<Row> all = resultSet.all();
+				  int batchsize = 0;
 			      for (int i = 0; i < all.size(); i++)
-			      {			    	  
+			      {	
+			    	  if (batchsize > 5)
+			    	  {
+						  r2lib.R2s_Release();
+			    		  batchsize = 0;
+			    	  }
 				      //  System.out.println("Transaction Found It: ");
 				      String serviceid = all.get(i).getUUID("transaction_id").toString();
 				      
 				      //
 				      // create the authenticate service
-				      String transactionid = r2lib.R2s_Subsequent(serviceid, "http://localhost:8080/R2FileApp/AuthTransaction.html", "Authenticate Transaction");					  
+				      String transactionid = r2lib.R2s_Subsequent(serviceid, FileAPI.FILEAPPURL + "/AuthTransaction.html", "Authenticate Transaction");					  
 				      // create the clear individual service
-				      String clearid = r2lib.R2s_Independent("http://localhost:8080/R2FileApp/ClearIndividual.html", serviceid);
+				      String clearid = r2lib.R2s_Independent(FileAPI.FILEAPPURL + "/ClearIndividual.html", serviceid);
 				      // set transaction as predecessor to clear
 				      r2lib.R2s_Setpredecessor(transactionid, clearid);
 			      }    

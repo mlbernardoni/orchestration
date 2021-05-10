@@ -14,13 +14,16 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 
+import R2sLib.R2sLib;
 
-import R2sLib.*;
+//import R2sLib.*;
 //import r2fileapp.RtoosLib;
 
 /**
@@ -37,14 +40,6 @@ public class FileImportController extends HttpServlet {
         super();
         // TODO Auto-generated constructor stub
     }
-
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-	}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
@@ -97,20 +92,23 @@ public class FileImportController extends HttpServlet {
 		      // //////////////////////////////////////////////////////
 			  //r2lib.R2s_Error("http://localhost:8080/R2FileApp/OnError.html?callback=" + rootid, "R2_Error");
 			  //r2lib.R2s_Final("http://localhost:8080/R2FileApp/Finally.html?callback=" + rootid, "R2_Final");
-			  r2lib.R2s_Error("http://localhost:8080/R2FileApp/OnError.html" , "R2_Error");
-			  r2lib.R2s_Final("http://localhost:8080/R2FileApp/Finally.html" , "R2_Final");
+			  r2lib.R2s_Error(FileAPI.FILEAPPURL + "/OnError.html" , "R2_Error");
+			  r2lib.R2s_Final(FileAPI.FILEAPPURL + "/Finally.html" , "R2_Final");
 //			  r2lib.R2_Final("http://127.0.0.1:46666/callback?id=" + rootid, "R2_Final");
 			  //
 			  // first things first, setup connection to DB
 			  //
-			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-			  Session session = cluster.connect();
+			  //Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  FileAPI.DBConnect();
+			  Session session =  FileAPI.cluster.connect();
 			  session.execute("USE testapp");
 
 			  String stquery = "SELECT *  FROM files WHERE ";
 		      stquery += "file_id = ";
 		      stquery += rootid;
-		      ResultSet resultSet = session.execute(stquery);
+		      Statement  st2 = new SimpleStatement(stquery);
+		      st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		      ResultSet resultSet = session.execute(st2);
 
 		      List<Row> all = resultSet.all();
 		      String file = all.get(0).getString("file");
@@ -119,13 +117,14 @@ public class FileImportController extends HttpServlet {
 		      {
 				  String[] data = lines[i].split(",");
 				  String transactionid = r2lib.R2s_GetID();
-				  session.execute("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
+			      Statement  st22 = new SimpleStatement("INSERT INTO transactions (file_id, transaction_id, from_account, to_account, amount, status) VALUES (?, ?, ?, ?, ?, ?);", 
 							UUID.fromString(rootid), UUID.fromString(transactionid), data[0], data[1], data[2], "I");
-		    	  
+			      st22.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+			      session.execute(st22);
 		      }
 		      
 			  session.close();
-		      cluster.close();
+		      //cluster.close();
 
 			  
 			  if (Authenticate.equals("Batch"))
@@ -133,14 +132,14 @@ public class FileImportController extends HttpServlet {
 				  // //////////////////////////////////////////////////////
 				  // Batch
 			      // //////////////////////////////////////////////////////
-				  r2lib.R2s_Subsequent("http://localhost:8080/R2FileApp/BatchController.html", serviceparam);
+				  r2lib.R2s_Subsequent(FileAPI.FILEAPPURL + "/BatchController.html", serviceparam);
 			  }
 			  else if (Authenticate.equals("Transaction") )
 			  {
 			      // //////////////////////////////////////////////////////
 				  // Transaction
 			      // //////////////////////////////////////////////////////
-				  r2lib.R2s_Subsequent("http://localhost:8080/R2FileApp/TransactionController.html", serviceparam);
+				  r2lib.R2s_Subsequent(FileAPI.FILEAPPURL + "/TransactionController.html", serviceparam);
 			  }
 			  
 		   	

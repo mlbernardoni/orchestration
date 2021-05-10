@@ -2,10 +2,10 @@ package r2fileapp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -16,11 +16,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.File;
+import software.aws.mcs.auth.SigV4AuthProvider;
+
+
 //import r2fileapp.RtoosLib;
 
 /**
@@ -38,14 +41,9 @@ public class FileAPI_ms extends HttpServlet {
         // TODO Auto-generated constructor stub
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-	}
-
+    public void init(ServletConfig config) throws ServletException {
+	  	  //FileAPI_ms.cluster  = Cluster.builder().addContactPoint("127.0.0.1").build();
+    }
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -78,30 +76,38 @@ public class FileAPI_ms extends HttpServlet {
 			  String rootid = r2lib.RtoosGetID();
 			  resp = rootid;
 			  String FileName = jsonObject.getString("FileName");
+		      Date date = new Date();
+		      //This method returns the time in millis
+		      long timeMilli = date.getTime();
 			  
 			  // data coming in in filename
 			  // put to file (in cassandra)
-				  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-				  Session session = cluster.connect();
+			  FileAPI.DBConnect();
+			  Session session =  FileAPI.cluster.connect();
 				  session.execute("USE testapp");
 				  
-				  session.execute("INSERT INTO files (file_id, file) VALUES (?, ?);", 
+			      Statement  st2 = new SimpleStatement("INSERT INTO files (file_id, file) VALUES (?, ?);", 
 							UUID.fromString(rootid), FileName);
+			      st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+			      session.execute(st2);
 				  
 
 			      String lines[] = FileName.split("\\r?\\n");
 				  String Clearing = jsonObject.getString("Clearing");			// Bulk or Individual
 				  String Authenticate = jsonObject.getString("Authenticate");			// Bulk or Individual
-				  Timestamp timestamp = new Timestamp(System.currentTimeMillis());		  
-				  session.execute("INSERT INTO tests (file_id, starttime, authenticate, clear, transactions, type) VALUES (?, ?, ?, ?, ?, ?);", 
-							UUID.fromString(rootid), timestamp, Authenticate, Clearing, (lines.length), "Besoke" );
+			      Statement  st22 = new SimpleStatement("INSERT INTO tests (file_id, starttime, authenticate, clear, transactions, type) VALUES (?, ?, ?, ?, ?, ?);", 
+							UUID.fromString(rootid), timeMilli, Authenticate, Clearing, (lines.length), "Besoke" );
+			      st22.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+			      session.execute(st22);
 
+				  session.close();
+			      //cluster.close();
 		      
 			  jsonObject.remove("FileName");
 			    jsonObject.put("rootid", rootid);
 			  // get the value
 			  //  CountDownLatch countDownLatch = new CountDownLatch(1);
-			  r2lib.SendEvent( "http://localhost:8080/R2FileApp/FileImportController_ms.html", jsonObject.toString() );
+			  r2lib.SendEvent( FileAPI.FILEAPPURL + "/FileImportController_ms.html", jsonObject.toString() );
 		    //  try {
 			//	countDownLatch.await();
 		   //   } catch (InterruptedException e) {
@@ -109,18 +115,27 @@ public class FileAPI_ms extends HttpServlet {
 		 	 //    System.out.println(e);
 		     // } 
 			  
-			  Timestamp timestamp2 = new Timestamp(System.currentTimeMillis());
-			  String endtime = timestamp2.toString();
+			  //Timestamp timestamp2 = new Timestamp(System.currentTimeMillis());
+			  //String endtime = timestamp2.toString();
+		      Date date2 = new Date();
+		      //This method returns the time in millis
+		      long timeMilli2 = date2.getTime();
 			  String fileid = rootid;
 			  
-			    String stquery = "UPDATE tests SET endtime  = '";
-			    stquery += endtime;
-			    stquery += "' WHERE file_id = ";
+			  //cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  FileAPI.DBConnect();
+			  session =  FileAPI.cluster.connect();
+			  session.execute("USE testapp");
+			    String stquery = "UPDATE tests SET endtime  = ";
+			    stquery += timeMilli2;
+			    stquery += " WHERE file_id = ";
 			    stquery += fileid;
 
-			  session.execute(stquery);
+			      Statement  st23 = new SimpleStatement(stquery);
+			      st23.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+			      session.execute(st23);
 			  session.close();
-		      cluster.close();
+		      //cluster.close();
 		  } 
 		  catch (JSONException e) 
 		  {

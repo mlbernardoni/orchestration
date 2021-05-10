@@ -3,6 +3,7 @@ package r2fileapp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -11,10 +12,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
-import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 
 /**
  * Servlet implementation class TestServlet
@@ -31,31 +34,6 @@ public class AuthTransaction_ms extends HttpServlet {
         // TODO Auto-generated constructor stub
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		// jb is the buffer for the json object
-		StringBuffer jb = new StringBuffer();
-		String line = null;
-		try {
-			// read the input json into jb
-			BufferedReader reader = request.getReader();
-			while ((line = reader.readLine()) != null)
-				jb.append(line);
-		} 
-		catch (Exception e) { 
-			/*report an error*/ 
-			// crash and burn
-			throw new IOException("Error reading request string");
-		}
-
-	  	String stinput = jb.toString();
-
-  		
-		response.getWriter().append("Input at: ").append(stinput);
-	}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
@@ -94,8 +72,9 @@ public class AuthTransaction_ms extends HttpServlet {
 			  
 		      
 			  // first things first, store the transactions in DB
-			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-			  Session session = cluster.connect();
+			  //Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  FileAPI.DBConnect();
+			  Session session =  FileAPI.cluster.connect();
 			  session.execute("USE testapp");
 
 			  String stquery = "SELECT *  FROM transactions WHERE ";
@@ -104,10 +83,19 @@ public class AuthTransaction_ms extends HttpServlet {
 		      stquery += " AND transaction_id = ";
 		      stquery += transactionid;
 		      //System.out.println(stquery);
-		      ResultSet resultSet = session.execute(stquery);
+		      Statement  st2 = new SimpleStatement(stquery);
+		      st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		      ResultSet resultSet = session.execute(st2);
 		      List<Row> all = resultSet.all();
 		      for (int i = 0; i < all.size(); i++)
 		      {
+		    	  // simulate authenticate processing
+				  try {
+					TimeUnit.MILLISECONDS.sleep(50);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		    	  String newstatus = "V";
 			      String fromaccount = all.get(i).getString("from_account");	
 			      String toaccount = all.get(i).getString("to_account");	
@@ -119,11 +107,13 @@ public class AuthTransaction_ms extends HttpServlet {
 			    	  newstatus = "F";
 			      }
 				  String stquery2 = "UPDATE transactions SET status  = '" + newstatus + "' WHERE file_id = " + fileid + " AND transaction_id = " + transactionid;
-			      session.execute(stquery2);
+			      Statement  st22 = new SimpleStatement(stquery2);
+			      st22.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+			      session.execute(st22);
 
 		      }
 		      session.close();
-		      cluster.close();
+		      //cluster.close();
 
 		    
 				  

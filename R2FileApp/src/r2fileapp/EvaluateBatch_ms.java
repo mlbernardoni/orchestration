@@ -13,10 +13,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 
 /**
  * Servlet implementation class TestServlet
@@ -32,33 +34,6 @@ public class EvaluateBatch_ms extends HttpServlet {
         super();
         // TODO Auto-generated constructor stub
     }
-
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		// jb is the buffer for the json object
-		StringBuffer jb = new StringBuffer();
-		String line = null;
-		try {
-			// read the input json into jb
-			BufferedReader reader = request.getReader();
-			while ((line = reader.readLine()) != null)
-				jb.append(line);
-		} 
-		catch (Exception e) { 
-			/*report an error*/ 
-			// crash and burn
-			throw new IOException("Error reading request string");
-		}
-
-	  	String stinput = jb.toString();
-
-    	//System.out.println(stinput);
-		
-		response.getWriter().append("Input at: ").append(stinput);
-	}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
@@ -103,8 +78,9 @@ public class EvaluateBatch_ms extends HttpServlet {
 			  //
 			  // first things first, setup connection to DB
 			  //
-			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-			  Session session = cluster.connect();
+			  //Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  FileAPI.DBConnect();
+			  Session session =  FileAPI.cluster.connect();
 			  session.execute("USE testapp");
 
 			  //
@@ -113,7 +89,11 @@ public class EvaluateBatch_ms extends HttpServlet {
 			  String stquery = "SELECT *  FROM transactions WHERE ";
 		      stquery += "file_id = ";
 		      stquery += fileid;
-		      ResultSet resultSet = session.execute(stquery);
+		      Statement  st2 = new SimpleStatement(stquery);
+		      st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		      ResultSet resultSet = session.execute(st2);
+		      session.close();
+		      //cluster.close();
 		      //
 		      // see if all good
 		      //
@@ -141,7 +121,7 @@ public class EvaluateBatch_ms extends HttpServlet {
 				  {
 					  
 					  // create the bulkclear service
-					  r2lib.SendEvent("http://localhost:8080/R2FileApp/ClearBulk_ms.html", fileid);						
+					  r2lib.SendEvent(FileAPI.FILEAPPURL + "/ClearBulk_ms.html", fileid);						
 				  }
 			      // //////////////////////////////////////////////////////
 				  // Individual
@@ -153,15 +133,13 @@ public class EvaluateBatch_ms extends HttpServlet {
 				    	 // create the Individual clear service
 					      String transaction_id = all.get(ii).getUUID("transaction_id").toString();	
 					      String parm = fileid + '=' + transaction_id;
-					      r2lib.SendEvent("http://localhost:8080/R2FileApp/ClearIndividual_ms.html", parm);						
+					      r2lib.SendEvent(FileAPI.FILEAPPURL + "/ClearIndividual_ms.html", parm);						
 				      }    
 				  }
 				  
 			  }
 		      
 
-		      session.close();
-		      cluster.close();
 			  
 		      System.out.println("EvaluateBatch_ms Ending: ");
 			  

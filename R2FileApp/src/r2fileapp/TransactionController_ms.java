@@ -14,10 +14,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 
 
 /**
@@ -34,14 +36,6 @@ public class TransactionController_ms extends HttpServlet {
         super();
         // TODO Auto-generated constructor stub
     }
-
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
-	}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
@@ -93,9 +87,21 @@ public class TransactionController_ms extends HttpServlet {
 			  //
 			  // first things first, setup connection to DB
 			  //
-			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-			  Session session = cluster.connect();
+			  //Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  FileAPI.DBConnect();
+			  Session session =  FileAPI.cluster.connect();
 			  session.execute("USE testapp");
+			  //
+			  // get all the transactions for the file
+			  //
+			  String stquery = "SELECT *  FROM transactions WHERE ";
+		      stquery += "file_id = ";
+		      stquery += fileid;
+		      Statement  st2 = new SimpleStatement(stquery);
+		      st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		      ResultSet resultSet = session.execute(st2);
+			  session.close();
+		      //cluster.close();
 			  
 			  
 			  if (Clearing.equals("Bulk"))
@@ -106,15 +112,6 @@ public class TransactionController_ms extends HttpServlet {
 				  
 				  //
 				  					  
-				  //
-				  // get all the transactions for the file
-				  //
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      ResultSet resultSet = session.execute(stquery);
-				  session.close();
-			      cluster.close();
 
 			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
@@ -125,10 +122,10 @@ public class TransactionController_ms extends HttpServlet {
 				      // create the authenticate service
 				      //
 				      String parm = fileid + '=' + serviceid;
-				      r2lib.SendEvent( "http://localhost:8080/R2FileApp/AuthTransaction_ms.html", parm);
+				      r2lib.SendEvent( FileAPI.FILEAPPURL + "/AuthTransaction_ms.html", parm);
 			      }    
 				  // create the bulkclear service
-				  r2lib.SendEvent("http://localhost:8080/R2FileApp/ClearBulk_ms.html", fileid);
+				  r2lib.SendEvent(FileAPI.FILEAPPURL + "/ClearBulk_ms.html", fileid);
 			      //System.out.println(BulkClear);
 			  }
 			  else if (Clearing.equals("Individual") )
@@ -139,13 +136,6 @@ public class TransactionController_ms extends HttpServlet {
 				  //
 				  // get all the transactions for the file
 				  //
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      ResultSet resultSet = session.execute(stquery);
-				  session.close();
-			      cluster.close();
-
 			      List<Row> all = resultSet.all();
 			      for (int i = 0; i < all.size(); i++)
 			      {			    	  
@@ -155,8 +145,8 @@ public class TransactionController_ms extends HttpServlet {
 				      //
 				      // create the authenticate service
 				      String parm = fileid + '=' + serviceid;
-				      r2lib.SendEvent("http://localhost:8080/R2FileApp/AuthTransaction_ms.html", parm);					  
-				      r2lib.SendEvent("http://localhost:8080/R2FileApp/ClearIndividual_ms.html", parm);
+				      r2lib.SendEvent(FileAPI.FILEAPPURL + "/AuthTransaction_ms.html", parm);					  
+				      r2lib.SendEvent(FileAPI.FILEAPPURL + "/ClearIndividual_ms.html", parm);
 			      }    
 			  }
 			  else if (Clearing.equals("IndividualA") )
@@ -167,13 +157,6 @@ public class TransactionController_ms extends HttpServlet {
 				  //
 				  // get all the transactions for the file
 				  //
-				  String stquery = "SELECT *  FROM transactions WHERE ";
-			      stquery += "file_id = ";
-			      stquery += fileid;
-			      ResultSet resultSet = session.execute(stquery);
-				  session.close();
-			      cluster.close();
-
 			      List<Row> all = resultSet.all();
 				  CountDownLatch countDownLatch = new CountDownLatch(all.size());
 			      for (int i = 0; i < all.size(); i++)
@@ -184,7 +167,7 @@ public class TransactionController_ms extends HttpServlet {
 				      //
 				      // create the authenticate service
 				      String parm = fileid + '=' + serviceid;
-				      r2lib.SendEventA("http://localhost:8080/R2FileApp/AuthTransaction_ms.html", parm, countDownLatch);					  
+				      r2lib.SendEventA(FileAPI.FILEAPPURL + "/AuthTransaction_ms.html", parm, countDownLatch);					  
 			      }    
 			      try {
 						countDownLatch.await();
@@ -201,7 +184,7 @@ public class TransactionController_ms extends HttpServlet {
 				      //
 				      // create the authenticate service
 				      String parm = fileid + '=' + serviceid;
-				      r2lib.SendEventA("http://localhost:8080/R2FileApp/ClearIndividual_ms.html", parm, countDownLatch2);
+				      r2lib.SendEventA(FileAPI.FILEAPPURL + "/ClearIndividual_ms.html", parm, countDownLatch2);
 			      }    
 			      try {
 						countDownLatch2.await();

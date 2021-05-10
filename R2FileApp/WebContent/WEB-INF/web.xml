@@ -10,6 +10,47 @@
     <welcome-file>default.jsp</welcome-file>
   </welcome-file-list>
   <servlet>
+    <servlet-name>R2sNewdashboard</servlet-name>
+    <jsp-file>/pages/dashboard.html</jsp-file>
+  </servlet> 
+  <servlet-mapping>
+    <servlet-name>R2sNewdashboard</servlet-name>
+    <url-pattern>/R2sNewDashboard.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <servlet-name>R2sSearch</servlet-name>
+    <jsp-file>/R2sSearch.html</jsp-file>
+  </servlet> 
+  <servlet-mapping>
+    <servlet-name>R2sSearch</servlet-name>
+    <url-pattern>/R2sSearch.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <servlet-name>R2sUpload</servlet-name>
+    <jsp-file>/R2sUpload.html</jsp-file>
+  </servlet> 
+  <servlet-mapping>
+    <servlet-name>R2sUpload</servlet-name>
+    <url-pattern>/R2sUpload.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <servlet-name>R2sDashboard</servlet-name>
+    <jsp-file>/R2sDashboard.html</jsp-file>
+  </servlet> 
+  <servlet-mapping>
+    <servlet-name>R2sDashboard</servlet-name>
+    <url-pattern>/R2sDashboard.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>heartbeat</servlet-name>
+    <servlet-class>r2fileapp.heartbeat</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>heartbeat</servlet-name>
+    <url-pattern>/index.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
     <description> </description>
     <servlet-name>Tests</servlet-name>
     <servlet-class>r2fileapp.Tests</servlet-class>
@@ -179,5 +220,14 @@
   <servlet-mapping>
     <servlet-name>ClearIndividual_ms</servlet-name>
     <url-pattern>/ClearIndividual_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>R2s</servlet-name>
+    <servlet-class>R2s.R2s</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>R2s</servlet-name>
+    <url-pattern>/R2sFA.html</url-pattern>
   </servlet-mapping>
 </web-app>

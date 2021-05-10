@@ -12,10 +12,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONException;
 
-import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
 
 /**
  * Servlet implementation class TestServlet
@@ -32,32 +34,6 @@ public class ClearBulk_ms extends HttpServlet {
         // TODO Auto-generated constructor stub
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		// jb is the buffer for the json object
-		StringBuffer jb = new StringBuffer();
-		String line = null;
-		try {
-			// read the input json into jb
-			BufferedReader reader = request.getReader();
-			while ((line = reader.readLine()) != null)
-				jb.append(line);
-		} 
-		catch (Exception e) { 
-			/*report an error*/ 
-			// crash and burn
-			throw new IOException("Error reading request string");
-		}
-
-	  	String stinput = jb.toString();
-
-    	//System.out.println(stinput);
-		
-		response.getWriter().append("Input at: ").append(stinput);
-	}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
@@ -91,15 +67,18 @@ public class ClearBulk_ms extends HttpServlet {
 		      
 
 			  // first things first, store the transactions in DB
-			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-			  Session session = cluster.connect();
+			  //Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  FileAPI.DBConnect();
+			  Session session =  FileAPI.cluster.connect();
 			  session.execute("USE testapp");
 
 			  String stquery = "SELECT *  FROM transactions WHERE ";
 		      stquery += "file_id = ";
 		      stquery += resp;
 		      //System.out.println(stquery);
-		      ResultSet resultSet = session.execute(stquery);
+		      Statement  st2 = new SimpleStatement(stquery);
+		      st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		      ResultSet resultSet = session.execute(st2);
 		      List<Row> all = resultSet.all();
 		      //System.out.println("Bulk Total Cleared ");
 		      for (int i = 0; i < all.size(); i++)
@@ -109,11 +88,13 @@ public class ClearBulk_ms extends HttpServlet {
 			      if (status.equals("V"))	// kick off independent events
 			      {
 					  String stquery2 = "UPDATE transactions SET status  = 'C'  WHERE file_id = " + resp + " AND transaction_id = " + trans;
-					  session.execute(stquery2);
+				      Statement  st22 = new SimpleStatement(stquery2);
+				      st22.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+					  session.execute(st22);
 			      }
 		      }
 		      session.close();
-		      cluster.close();
+		      //cluster.close();
 		    			  
 		      System.out.println("ClearBulk_ms Ending: ");
 			  

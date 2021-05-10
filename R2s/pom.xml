@@ -57,7 +57,17 @@
 	    <artifactId>netty-all</artifactId>
 	    <version>4.1.59.Final</version>
 	</dependency>
-  </dependencies>
+	<dependency>
+	        <groupId>software.aws.mcs</groupId>
+	        <artifactId>aws-sigv4-auth-cassandra-java-driver-plugin_3</artifactId>
+	        <version>3.0.3</version>
+	</dependency>
+	<dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sts</artifactId>
+            <version>1.11.1010</version>
+        </dependency>  
+   </dependencies>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>

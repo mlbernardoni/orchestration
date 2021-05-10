@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>R2FileApp</display-name>
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  <servlet>
+    <description> </description>
+    <servlet-name>Tests</servlet-name>
+    <servlet-class>r2fileapp.Tests</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Tests</servlet-name>
+    <url-pattern>/Tests.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>FileAPI</servlet-name>
+    <servlet-class>r2fileapp.FileAPI</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileAPI</servlet-name>
+    <url-pattern>/FileAPI.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>FileImportController</servlet-name>
+    <servlet-class>r2fileapp.FileImportController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileImportController</servlet-name>
+    <url-pattern>/FileImportController.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>BatchController</servlet-name>
+    <servlet-class>r2fileapp.BatchController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>BatchController</servlet-name>
+    <url-pattern>/BatchController.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>EvaluateBatch</servlet-name>
+    <servlet-class>r2fileapp.EvaluateBatch</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>EvaluateBatch</servlet-name>
+    <url-pattern>/EvaluateBatch.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>TransactionController</servlet-name>
+    <servlet-class>r2fileapp.TransactionController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TransactionController</servlet-name>
+    <url-pattern>/TransactionController.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>AuthTransaction</servlet-name>
+    <servlet-class>r2fileapp.AuthTransaction</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AuthTransaction</servlet-name>
+    <url-pattern>/AuthTransaction.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>ClearBulk</servlet-name>
+    <servlet-class>r2fileapp.ClearBulk</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ClearBulk</servlet-name>
+    <url-pattern>/ClearBulk.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>ClearIndividual</servlet-name>
+    <servlet-class>r2fileapp.ClearIndividual</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ClearIndividual</servlet-name>
+    <url-pattern>/ClearIndividual.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>Finally</servlet-name>
+    <servlet-class>r2fileapp.Finally</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Finally</servlet-name>
+    <url-pattern>/Finally.html</url-pattern>
+  </servlet-mapping>
+   <servlet>
+    <description> </description>
+    <servlet-name>OnError</servlet-name>
+    <servlet-class>r2fileapp.OnError</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>OnError</servlet-name>
+    <url-pattern>/OnError.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>FileAPI_ms</servlet-name>
+    <servlet-class>r2fileapp.FileAPI_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileAPI_ms</servlet-name>
+    <url-pattern>/FileAPI_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>FileImportController_ms</servlet-name>
+    <servlet-class>r2fileapp.FileImportController_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileImportController_ms</servlet-name>
+    <url-pattern>/FileImportController_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>BatchController_ms</servlet-name>
+    <servlet-class>r2fileapp.BatchController_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>BatchController_ms</servlet-name>
+    <url-pattern>/BatchController_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>EvaluateBatch_ms</servlet-name>
+    <servlet-class>r2fileapp.EvaluateBatch_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>EvaluateBatch_ms</servlet-name>
+    <url-pattern>/EvaluateBatch_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>TransactionController_ms</servlet-name>
+    <servlet-class>r2fileapp.TransactionController_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TransactionController_ms</servlet-name>
+    <url-pattern>/TransactionController_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>AuthTransaction_ms</servlet-name>
+    <servlet-class>r2fileapp.AuthTransaction_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AuthTransaction_ms</servlet-name>
+    <url-pattern>/AuthTransaction_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>ClearBulk_ms</servlet-name>
+    <servlet-class>r2fileapp.ClearBulk_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ClearBulk_ms</servlet-name>
+    <url-pattern>/ClearBulk_ms.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description> </description>
+    <servlet-name>ClearIndividual_ms</servlet-name>
+    <servlet-class>r2fileapp.ClearIndividual_ms</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ClearIndividual_ms</servlet-name>
+    <url-pattern>/ClearIndividual_ms.html</url-pattern>
+  </servlet-mapping>
+</web-app>

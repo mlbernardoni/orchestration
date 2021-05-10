@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<link rel = "stylesheet" href="mystyle2.css">
+<title>R2Dashboard</title>
+</head>
+<body>
+  <header>
+    <h1>R2s File Upload</h1>
+  </header>
+     <h3>Select Parameters</h3>
+  <form>
+ 	  <label for="authdropdown">Authentication</label>
+	  <select class="authdropdown" data-style="btn-info" name="authdropdown" id="authdropdown">
+		        <option value="Transaction">Transaction</option>
+		        <option value="Batch">Batch</option>
+		</select>    
+	  <label for="cleardropdown">Clearing</label>
+	  <select class="cleardropdown" data-style="btn-info" name="cleardropdown" id="cleardropdown">
+		        <option value="Individual">Individual</option>
+		        <option value="IndividualA">IndividualA</option>
+		        <option value="Bulk">Bulk</option>
+		</select>  
+		<br><br>
+	  <label for="iterations">Iterations</label>
+		<input name="iterations" id="iterations" type="number" min="0" step="1" value="1"/>
+	  <label for="waitsec">Wait (sec)</label>
+		<input name="waitsec" id="waitsec" type="number" min="0" step="1" value="11"/>
+		<br><br>	  
+       <input id="fileupload" type="file" name="fileupload" />
+      <br><br>
+      <button id="reset" type ="reset">Reset</button>
+  </form>
+  <br><br>
+ <button id="upload-button" onclick="uploadFile()"> Upload </button>
+ <button id="upload-button_ms" onclick="uploadFile_ms()"> Upload ms</button>
+ <p id="p1">Select Parameters</p>
+ <script type="text/javascript">
+
+ 
+ function uploadFile() {
+		document.getElementById("p1").innerHTML = "Started";
+	  var iterations = document.getElementById("iterations").value;
+	  var waitsec = document.getElementById("waitsec").value;
+	  var file = fileupload.files[0],
+	    read = new FileReader();
+	  if (file == undefined) {
+			document.getElementById("p1").innerHTML = 'Select a file.';
+		  return;
+	  }
+	  read.readAsBinaryString(file);	  
+	  read.onloadend = async function(){
+			document.getElementById("p1").innerHTML = "Uploading File<br>Do not refresh the browser";
+			var jsonData = {};
+			  jsonData["Authenticate"] = document.getElementById("authdropdown").value;
+			  jsonData["Clearing"] = document.getElementById("cleardropdown").value;;
+			  jsonData["FileName"] = read.result;
+			  //jsonData["type"] = "r2s"
+			  
+			    //formData.append("file", fileupload.files[0]);
+			    //formData.append("authdropdown", authdropdown);
+			   // formData.append("cleardropdown", cleardropdown);
+			   for (i = 0; i < iterations; i++)
+				   {
+					document.getElementById("p1").innerHTML = i.toString();
+				    let response  = await fetch("http://R2sclient-env.eba-hnmjtifd.us-east-2.elasticbeanstalk.com/FileAPI.html", {
+				        headers: {
+				            'Content-Type': 'application/json'
+				          },
+				      method: "POST", 
+				      body: JSON.stringify(jsonData)
+				    });    
+				    let data = await response.text();
+				    await sleep(waitsec*1000);
+				   }
+				document.getElementById("p1").innerHTML = "Finished";
+				//document.getElementById("p1").innerHTML = "File: " + data +" Complete, check your database";
+				//window.location.href = '/R2sDashboard/R2sDashboard.html?id=' + data
+	  }
+/*	  
+		//Declare an EventSource
+		  const eventSource = new EventSource('/clientcallback');
+		  // Handler for events without an event type specified
+		  eventSource.onmessage = (e) => {
+		    // Do something - event data etc will be in e.data
+*/		    
+	}  
+  function uploadFile_ms() {
+		document.getElementById("p1").innerHTML = "Started";
+	  var iterations = document.getElementById("iterations").value;
+	  var waitsec = document.getElementById("waitsec").value;
+	  var file = fileupload.files[0],
+	    read = new FileReader();
+	  if (file == undefined) {
+			document.getElementById("p1").innerHTML = 'Select a file.';
+		  return;
+	  }
+	  read.readAsBinaryString(file);	  
+	  read.onloadend = async function(){
+			document.getElementById("p1").innerHTML = "Uploading File<br>Do not refresh the browser";
+			var jsonData = {};
+			  jsonData["Authenticate"] = document.getElementById("authdropdown").value;
+			  jsonData["Clearing"] = document.getElementById("cleardropdown").value;;
+			  jsonData["FileName"] = read.result;
+			  //jsonData["type"] = "bspoke"
+			    //formData.append("file", fileupload.files[0]);
+			    //formData.append("authdropdown", authdropdown);
+			   // formData.append("cleardropdown", cleardropdown);
+			   for (i = 0; i < iterations; i++)
+				   {
+					document.getElementById("p1").innerHTML = i.toString();
+				    let response  = await fetch("http://R2sclient-env.eba-hnmjtifd.us-east-2.elasticbeanstalk.com/FileAPI_ms.html", {
+				        headers: {
+				            'Content-Type': 'application/json'
+				          },
+				      method: "POST", 
+				      body: JSON.stringify(jsonData)
+				    });    
+				    let data = await response.text();
+				    await sleep(3000);
+				   }
+				//document.getElementById("p1").innerHTML = "File: " + data +" Complete, check your database";
+				document.getElementById("p1").innerHTML = "Finished";
+	  }
+}
+  function sleep(ms) {
+	  return new Promise(resolve => setTimeout(resolve, ms));
+	}
+  </script>
+
+
+</body>
+</html>

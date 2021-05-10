@@ -11,11 +11,35 @@
   </welcome-file-list>
     <description>R2s</description>
   <servlet>
+    <servlet-name>heartbeat</servlet-name>
+    <servlet-class>R2s.heartbeat</servlet-class>
+  </servlet> 
+  <servlet-mapping>
+    <servlet-name>heartbeat</servlet-name>
+    <url-pattern>/index.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
     <servlet-name>R2s</servlet-name>
     <servlet-class>R2s.R2s</servlet-class>
   </servlet> 
   <servlet-mapping>
     <servlet-name>R2s</servlet-name>
     <url-pattern>/R2s.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <servlet-name>R2sSearch</servlet-name>
+    <jsp-file>/R2sSearch.html</jsp-file>
+  </servlet> 
+  <servlet-mapping>
+    <servlet-name>R2sSearch</servlet-name>
+    <url-pattern>/R2sSearch.html</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <servlet-name>R2sDashboard</servlet-name>
+    <jsp-file>/R2sDashboard.html</jsp-file>
+  </servlet> 
+  <servlet-mapping>
+    <servlet-name>R2sDashboard</servlet-name>
+    <url-pattern>/R2sDashboard.html</url-pattern>
   </servlet-mapping>
 </web-app>

@@ -1,10 +1,7 @@
 package r2fileapp;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.List;
-import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -14,15 +11,18 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SimpleStatement;
+import com.datastax.driver.core.Statement;
+
+import software.aws.mcs.auth.SigV4AuthProvider;
 
 
-import R2sLib.*;
 
 /**
  * Servlet implementation class R2FileAPI
@@ -58,11 +58,19 @@ public class Tests extends HttpServlet {
 		  {
 			  // data coming in in filename
 			  // put to file (in cassandra)
-			  Cluster cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			  Cluster cluster =  Cluster.builder()
+						.addContactPoint("cassandra.us-east-2.amazonaws.com")
+						.withPort(9142)
+						.withAuthProvider(new SigV4AuthProvider("us-east-2"))
+		                .withSSL()
+						.withCredentials("rtoos-at-061466880193", "cNG6qoaLFn8w+6GYDhehcKWektKA5NKTA5SNVj4JgMg=")
+						.build();
 			  Session session = cluster.connect();
 			  session.execute("USE testapp");
 			  
-			  ResultSet resultSet = session.execute("Select JSON * FROM tests");
+		      Statement  st2 = new SimpleStatement("Select JSON * FROM tests");
+		      st2.setConsistencyLevel(ConsistencyLevel.LOCAL_QUORUM);
+		      ResultSet resultSet = session.execute(st2);
 		      List<Row> all = resultSet.all();
 		      for (int i = 0; i < all.size(); i++)
 		      {			    	  

@@ -76,17 +76,17 @@ public class R2SendThread implements  Runnable {
 				  wr.flush();
 				  wr.close();
 				  retcode = connection.getResponseCode();
+				  //System.out.println("R2Lib Ret Code: " + responseCode);
+				  BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+				  String output;
+				 
+				  while ((output = in.readLine()) != null) 
+				  {
+					  resp.append(output);
+				  }
+				  in.close();
 				  if (retcode == 200)
 				  {			  
-					  //System.out.println("R2Lib Ret Code: " + responseCode);
-					  BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-					  String output;
-					 
-					  while ((output = in.readLine()) != null) 
-					  {
-						  resp.append(output);
-					  }
-					  in.close();
 					  connection.disconnect();
 
 					  mysemaphore.release();
@@ -94,8 +94,8 @@ public class R2SendThread implements  Runnable {
 				  }
 				  else
 				  {
+					  errorstring = (errorstring + " connection: " + resp + " param: " + newrequest.toString() + ";");
 					  connection.disconnect();
-					  errorstring = (errorstring + "URL Return Code: " + retcode + ";");
 					  //System.out.println("R2Lib Ret Code: " + responseCode);
 					  //throw new IOException("IO Error sending to R2 ret code: " + responseCode);
 					  mytries--;
@@ -106,6 +106,7 @@ public class R2SendThread implements  Runnable {
 						  }
 						  catch (JSONException | InterruptedException ie) 
 						  {
+							  mysemaphore.release();
 							  throw new IOException("InterruptedException " + ie.toString());
 						  }						  
 					  }

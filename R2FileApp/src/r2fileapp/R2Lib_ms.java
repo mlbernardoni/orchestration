@@ -8,20 +8,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicNameValuePair;
 import static org.asynchttpclient.Dsl.*;
 import org.asynchttpclient.*;
-import org.json.JSONObject;
 
 import com.datastax.driver.core.utils.UUIDs;
 
@@ -113,7 +102,6 @@ public class R2Lib_ms {
 	public String SendEventA(String serviceurl, String serviceparam, CountDownLatch countDownLatch) throws IOException
 	{
 		//HttpResponse  response;
-	    final String tempName = "OY";
 	    String ourresponse = "SendEventA Fail1"; 
 			
 		try {
@@ -129,16 +117,21 @@ public class R2Lib_ms {
 	    		listenableFuture.addListener(() -> {
 	    		    try {
 		    			//System.out.println(serviceparam);
-						Response response = listenableFuture.get();
+						listenableFuture.get();
+						//Response response = listenableFuture.get();
 					    //System.out.println(response.getResponseBody());
+						asyncHttpClient.close();
+		    		    countDownLatch.countDown();
 					    
 					} catch (InterruptedException e) {
 					     System.out.println(e);
 					} catch (ExecutionException e) {
 					     System.out.println(e);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+					     System.out.println(e);
 					}
 	    		    //LOG.debug(response.getStatusCode());
-	    		    countDownLatch.countDown();
 	    		}, Executors.newCachedThreadPool());		
 /*	    		
 			    ListenableFuture<Response> execute = asyncHttpClient
